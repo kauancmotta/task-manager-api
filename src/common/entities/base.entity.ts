@@ -3,6 +3,7 @@ import {
   DeleteDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
 import { UUIDV7Entity } from './uuidv7.entity';
 
 export abstract class BaseEntity extends UUIDV7Entity {
