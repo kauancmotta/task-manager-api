@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { TypeOrmExceptionFilter } from '@common/filters/typeorm-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -19,6 +20,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalFilters(new TypeOrmExceptionFilter());
 
   await app.listen(process.env.PORT ?? 3000);
 }
