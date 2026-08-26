@@ -2,4 +2,5 @@ import { CategoriesService } from '@modules/categories/services/categories.servi
 
 export const createMockCategoriesService = (): Partial<Record<keyof CategoriesService, jest.Mock>> => ({
   findAll: jest.fn(),
+  findOne: jest.fn(),
 });
