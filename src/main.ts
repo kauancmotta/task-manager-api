@@ -7,7 +7,11 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
+  app.setGlobalPrefix('api');
+
   app.useLogger(app.get(Logger));
+
+  app.enableCors();
 
   await app.listen(process.env.PORT ?? 3000);
 }
