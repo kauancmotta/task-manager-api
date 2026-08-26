@@ -27,7 +27,7 @@ describe('CategoriesController', () => {
   describe('findAll', () => {
     it('should call service.findAll and return result', async () => {
       const mockCategories = [createMockCategory()];
-      jest.mocked(service.findAll).mockResolvedValue(mockCategories);
+      vi.mocked(service.findAll).mockResolvedValue(mockCategories);
 
       const result = await controller.findAll();
 
@@ -39,7 +39,7 @@ describe('CategoriesController', () => {
   describe('findOne', () => {
     it('should call service.findOne and return result', async () => {
       const mockCategories = createMockCategory()
-      jest.mocked(service.findOne).mockResolvedValue(mockCategories);
+      vi.mocked(service.findOne).mockResolvedValue(mockCategories);
 
       const result = await controller.findOne(mockCategories.id);
 
