@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: taskDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "TaskManagerDevelopment"
+    networks:
+      - db
+    ports:
+      - "5432:5432"
+
+networks:
+  db:
+    driver: bridge
