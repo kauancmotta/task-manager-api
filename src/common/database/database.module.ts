@@ -1,4 +1,3 @@
-// database.module.ts
 import { EnvConfig } from '@common/config/env.config';
 import { Category } from '@modules/categories/entities/categories.entity';
 import { Module } from '@nestjs/common';
@@ -14,7 +13,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         type: 'postgres',
         url: configService.get('DATABASE_URL', { infer: true }),
         entities: [Category],
-        migrations: ['src/common/database/migrations/*.ts'],
+        migrations: [__dirname + '/migrations/*.js'],
         synchronize: false,
       }),
     }),
