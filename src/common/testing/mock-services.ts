@@ -4,4 +4,7 @@ import { CategoriesService } from '@modules/categories/services/categories.servi
 export const createMockCategoriesService = (): Partial<Record<keyof CategoriesService, Mock>> => ({
   findAll: vi.fn(),
   findOne: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  remove: vi.fn(),
 });

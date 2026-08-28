@@ -23,7 +23,7 @@ export class TypeOrmExceptionFilter implements ExceptionFilter {
 
     // connection
     if (exception instanceof ConnectionNotFoundError) {
-      this.logger.error('Database connection lost');
+      this.logger.error('Database connection lost', exception.stack);
       response.status(HttpStatus.SERVICE_UNAVAILABLE).json({
         statusCode: HttpStatus.SERVICE_UNAVAILABLE,
         message: 'Service temporarily unavailable',
