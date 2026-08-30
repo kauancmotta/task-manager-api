@@ -1,5 +1,7 @@
+import { Entity, Column, OneToMany } from 'typeorm';
+
 import { BaseWithoutSoftDeleteEntity } from '@common/entities/base-without-soft-delete.entity';
-import { Entity, Column } from 'typeorm';
+import { Task } from '@modules/tasks/entities/task.entity';
 
 @Entity('categories')
 export class Category extends BaseWithoutSoftDeleteEntity {
@@ -11,4 +13,7 @@ export class Category extends BaseWithoutSoftDeleteEntity {
 
   @Column()
   color!: string;
+
+  @OneToMany(() => Task, (task) => task.category)
+  tasks!: Task[];
 }
