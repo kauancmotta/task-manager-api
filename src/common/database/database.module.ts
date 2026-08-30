@@ -5,6 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnvConfig } from '@common/config/env.config';
 import { Category } from '@modules/categories/entities/categories.entity';
 import { User } from '@modules/users/entities/user.entity';
+import { Task } from '@modules/tasks/entities/task.entity';
+import { TaskAssignee } from '@modules/tasks/entities/task-assignee.entity';
+import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
 
 @Module({
   imports: [
@@ -14,7 +17,7 @@ import { User } from '@modules/users/entities/user.entity';
       useFactory: (configService: ConfigService<EnvConfig, true>) => ({
         type: 'postgres',
         url: configService.get('DATABASE_URL', { infer: true }),
-        entities: [Category, User],
+        entities: [Category, User, Task, TaskAssignee, TaskAttachment],
         migrations: [__dirname + '/migrations/*.js'],
         synchronize: false,
       }),
