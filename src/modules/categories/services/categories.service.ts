@@ -72,7 +72,7 @@ export class CategoriesService {
   private async validateExistName(name: string, excludeId?: string) {
     const exists = await this.categoryRepository.existsBy({
       name,
-      id: excludeId ? Not(excludeId) : undefined,
+      ...(excludeId && { id: Not(excludeId) }),
     });
 
     if (exists) {
