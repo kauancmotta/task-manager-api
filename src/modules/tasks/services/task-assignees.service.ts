@@ -40,9 +40,10 @@ export class TaskAssigneesService {
     await this.validateExistTask(taskId);
     await this.validateExistUser(createTaskAssigneeDto.userId);
 
-    const taskAssignee = this.taskAssigneeRepository.create(
-      createTaskAssigneeDto,
-    );
+    const taskAssignee = this.taskAssigneeRepository.create({
+      ...createTaskAssigneeDto,
+      taskId,
+    });
     await this.taskAssigneeRepository.save(taskAssignee);
 
     this.logger.log(
