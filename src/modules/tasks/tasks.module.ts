@@ -10,6 +10,9 @@ import { Category } from '@modules/categories/entities/categories.entity';
 import { User } from '@modules/users/entities/user.entity';
 import { TaskAssigneesService } from '@modules/tasks/services/task-assignees.service';
 import { TaskAssigneesController } from '@modules/tasks/controllers/task-assignees.controller';
+import { StorageModule } from '@common/storage/storage.module';
+import { TaskAttachmentsController } from '@modules/tasks/controllers/task-attachments.controller';
+import { TaskAttachmentsService } from '@modules/tasks/services/task-attachments.service';
 
 @Module({
   imports: [
@@ -20,8 +23,13 @@ import { TaskAssigneesController } from '@modules/tasks/controllers/task-assigne
       TaskAssignee,
       TaskAttachment,
     ]),
+    StorageModule,
   ],
-  controllers: [TasksController, TaskAssigneesController],
-  providers: [TasksService, TaskAssigneesService],
+  controllers: [
+    TasksController,
+    TaskAssigneesController,
+    TaskAttachmentsController,
+  ],
+  providers: [TasksService, TaskAssigneesService, TaskAttachmentsService],
 })
 export class TasksModule {}

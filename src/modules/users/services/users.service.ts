@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { Repository } from 'typeorm';
 import { User } from '@modules/users/entities/user.entity';
 import { CreateUserDto, UpdateUserDto } from '@modules/users/dto';
 import { Logger } from 'nestjs-pino';
+import { StorageService } from '@common/storage/storage.interface';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +18,8 @@ export class UsersService {
     private readonly logger: Logger,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @Inject('STORAGE_SERVICE')
+    private readonly storageService: StorageService,
   ) {}
 
   async findAll() {
@@ -53,6 +57,36 @@ export class UsersService {
     this.logger.log(`User ID: ${id} updated successfully`);
 
     return this.findOne(id);
+  }
+
+  async updateAvatar(id: string, avatar: Express.Multer.File) {
+    const user = await this.findOne(id);
+
+    if (user.avatarUrl) {
+      await this.storageService.delete(user.avatarUrl);
+    }
+
+    const avatarUrl = await this.storageService.upload(avatar);
+
+    await this.userRepository.update(id, { avatarUrl });
+
+    this.logger.log(`User ID: ${id} avatar updated successfully`);
+
+    return this.findOne(id);
+  }
+
+  async removeAvatar(id: string) {
+    const user = await this.findOne(id);
+
+    if (!user.avatarUrl) {
+      throw new NotFoundException(`User ID: ${id} avatar not found`);
+    }
+
+    await this.storageService.delete(user.avatarUrl);
+
+    await this.userRepository.update(id, { avatarUrl: null });
+
+    this.logger.log(`User ID: ${id} avatar removed successfully`);
   }
 
   async remove(id: string) {

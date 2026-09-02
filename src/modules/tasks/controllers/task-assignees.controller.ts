@@ -15,7 +15,7 @@ import { TaskAssigneesService } from '@modules/tasks/services/task-assignees.ser
 @Controller('tasks/:taskId/assignees')
 export class TaskAssigneesController {
   constructor(private readonly taskAssigneesService: TaskAssigneesService) {}
-  @Get('')
+  @Get()
   findAll(@UuidParam('taskId') taskId: string) {
     return this.taskAssigneesService.findAll(taskId);
   }

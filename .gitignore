@@ -60,3 +60,6 @@ src/common/database/migrations*
 
 tsconfig.tsbuildinfo
 tsconfig.build.tsbuildinfo
+
+# Uploads Multer
+uploads/
