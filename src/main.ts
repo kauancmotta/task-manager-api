@@ -4,9 +4,11 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { TypeOrmExceptionFilter } from '@common/filters/typeorm-exception.filter';
 import { AllExceptionsFilter } from '@common/filters/http-exception.filter';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });
 
@@ -23,6 +25,12 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new AllExceptionsFilter(), new TypeOrmExceptionFilter());
 
+  if (process.env.NODE_ENV !== 'production') {
+    app.useStaticAssets(join(process.cwd(), 'uploads'), {
+      prefix: '/uploads',
+    });
+  }
+
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+bootstrap().catch((error) => console.error(error));

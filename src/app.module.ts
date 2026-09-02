@@ -7,11 +7,13 @@ import { DatabaseModule } from '@common/database/database.module';
 import { AppLoggerModule } from '@common/logger/logger.module';
 import { UsersModule } from '@modules/users/users.module';
 import { TasksModule } from '@modules/tasks/tasks.module';
+import { StorageModule } from '@common/storage/storage.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
     AppLoggerModule,
     DatabaseModule,
+    StorageModule,
     CategoriesModule,
     UsersModule,
     TasksModule,
