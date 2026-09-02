@@ -1,10 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '@common/entities/base.entity';
 import { Task } from '@modules/tasks/entities/task.entity';
@@ -17,9 +11,6 @@ export class TaskAssignee extends BaseEntity {
 
   @Column({ name: 'user_id' })
   userId!: string;
-
-  @CreateDateColumn({ name: 'assigned_at', type: 'timestamptz' })
-  assignedAt!: Date;
 
   @ManyToOne(() => Task)
   @JoinColumn({

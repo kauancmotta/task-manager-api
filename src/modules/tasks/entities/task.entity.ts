@@ -6,6 +6,7 @@ import { TaskStatus } from '@modules/tasks/enums/task-status.enum';
 import { Category } from '@modules/categories/entities/categories.entity';
 import { TaskAssignee } from '@modules/tasks/entities/task-assignee.entity';
 import { User } from '@modules/users/entities/user.entity';
+import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
 
 @Entity('tasks')
 export class Task extends BaseEntity {
@@ -47,4 +48,7 @@ export class Task extends BaseEntity {
 
   @OneToMany(() => TaskAssignee, (taskAssignee) => taskAssignee.task)
   taskAssignees!: TaskAssignee[];
+
+  @OneToMany(() => TaskAttachment, (taskAttachment) => taskAttachment.task)
+  taskAttachments!: TaskAttachment[];
 }
