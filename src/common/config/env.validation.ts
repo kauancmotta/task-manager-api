@@ -42,6 +42,16 @@ class EnvironmentVariables {
   @Max(65535)
   PORT!: number;
 
+  @IsString()
+  @IsNotEmpty()
+  JWT_SECRET!: string;
+  @IsString()
+  @IsNotEmpty()
+  JWT_EXPIRES_IN!: string;
+  @IsString()
+  @IsNotEmpty()
+  JWT_REFRESH_EXPIRES_IN!: string;
+
   @IsEnum(StorageProvider)
   STORAGE_PROVIDER!: StorageProvider;
 

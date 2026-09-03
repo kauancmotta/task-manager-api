@@ -8,12 +8,14 @@ import { AppLoggerModule } from '@common/logger/logger.module';
 import { UsersModule } from '@modules/users/users.module';
 import { TasksModule } from '@modules/tasks/tasks.module';
 import { StorageModule } from '@common/storage/storage.module';
+import { AuthModule } from '@modules/auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
     AppLoggerModule,
     DatabaseModule,
     StorageModule,
+    AuthModule,
     CategoriesModule,
     UsersModule,
     TasksModule,

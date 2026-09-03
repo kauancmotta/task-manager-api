@@ -8,6 +8,7 @@ import { User } from '@modules/users/entities/user.entity';
 import { Task } from '@modules/tasks/entities/task.entity';
 import { TaskAssignee } from '@modules/tasks/entities/task-assignee.entity';
 import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
+import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
 
 @Module({
   imports: [
@@ -17,7 +18,14 @@ import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
       useFactory: (configService: ConfigService<EnvConfig, true>) => ({
         type: 'postgres',
         url: configService.get('DATABASE_URL', { infer: true }),
-        entities: [Category, User, Task, TaskAssignee, TaskAttachment],
+        entities: [
+          RefreshToken,
+          User,
+          Category,
+          Task,
+          TaskAssignee,
+          TaskAttachment,
+        ],
         migrations: [__dirname + '/migrations/*.js'],
         synchronize: false,
       }),

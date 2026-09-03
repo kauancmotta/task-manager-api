@@ -18,6 +18,7 @@ import {
   createMockDeleteResult,
   createMockUpdateResult,
 } from '@common/testing/mock-typeorm';
+import { createMockStorageService } from '@common/testing/mock-services';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -35,6 +36,10 @@ describe('UsersService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: createMockRepository(),
+        },
+        {
+          provide: 'STORAGE_SERVICE',
+          useValue: createMockStorageService(),
         },
       ],
     }).compile();
@@ -105,8 +110,6 @@ describe('UsersService', () => {
     });
 
     it('should throw ConflictException when email is already exists', async () => {
-      const id = uuidv7();
-
       const dto = new CreateUserDto();
       dto.name = 'Mock Name';
       dto.email = 'mock@email.com';

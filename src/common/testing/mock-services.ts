@@ -2,6 +2,7 @@ import { Mock } from 'vitest';
 
 import { CategoriesService } from '@modules/categories/services/categories.service';
 import { UsersService } from '@modules/users/services/users.service';
+import { StorageService } from '@common/storage/storage.interface';
 
 export const createMockCategoriesService = (): Partial<
   Record<keyof CategoriesService, Mock>
@@ -21,4 +22,11 @@ export const createMockUsersService = (): Partial<
   create: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+});
+
+export const createMockStorageService = (): Partial<
+  Record<keyof StorageService, Mock>
+> => ({
+  upload: vi.fn(),
+  delete: vi.fn(),
 });
