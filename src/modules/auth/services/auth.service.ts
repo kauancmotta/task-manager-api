@@ -1,4 +1,4 @@
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   ConflictException,
   Injectable,
@@ -49,19 +49,15 @@ export class AuthService {
       });
       await manager.save(User, user);
 
-      const accessToken = this.generateAccessToken({
-        sub: user.id,
-        email,
-      });
-
-      const refreshToken = await this.refreshTokensService.create(
+      const tokens = await this.generateAuthTokens(
         user.id,
+        user.email,
         manager,
       );
 
       this.logger.log(`User ID: ${user.id} registered successfully`);
 
-      return { accessToken, refreshToken };
+      return tokens;
     });
   }
 
@@ -80,14 +76,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const accessToken = this.generateAccessToken({
-      sub: user.id,
-      email,
-    });
-
-    const refreshToken = await this.refreshTokensService.create(user.id);
-
-    return { accessToken, refreshToken };
+    return this.generateAuthTokens(user.id, user.email);
   }
 
   async loginWithGoogle(googleProfile: GoogleProfile) {
@@ -112,31 +101,7 @@ export class AuthService {
       this.logger.log(`User ID: ${user.id} Google account linked successfully`);
     }
 
-    const accessToken = this.generateAccessToken({
-      sub: user.id,
-      email: googleProfile.email,
-    });
-
-    const refreshToken = await this.refreshTokensService.create(user.id);
-
-    return { accessToken, refreshToken };
-  }
-
-  private generateAccessToken(payload: JwtPayload) {
-    const token = this.jwtService.sign(payload);
-    const expiresAt = calculateExpiresAt(
-      this.configService.get('JWT_EXPIRES_IN', { infer: true }),
-    );
-
-    return { token, expiresAt, tokenType: TOKEN_TYPE };
-  }
-
-  private async validateExistEmail(email: string) {
-    const exists = await this.userRepository.exists({ where: { email } });
-
-    if (exists) {
-      throw new ConflictException(`Email "${email}" already exists`);
-    }
+    return this.generateAuthTokens(user.id, user.email);
   }
 
   private async registerWithGoogle(googleProfile: GoogleProfile) {
@@ -149,19 +114,45 @@ export class AuthService {
       });
       await manager.save(User, user);
 
-      const accessToken = this.generateAccessToken({
-        sub: user.id,
-        email: googleProfile.email,
-      });
-
-      const refreshToken = await this.refreshTokensService.create(
+      const tokens = await this.generateAuthTokens(
         user.id,
+        user.email,
         manager,
       );
 
       this.logger.log(`User ID: ${user.id} registered successfully`);
 
-      return { accessToken, refreshToken };
+      return tokens;
     });
+  }
+
+  private async validateExistEmail(email: string) {
+    const exists = await this.userRepository.exists({ where: { email } });
+
+    if (exists) {
+      throw new ConflictException(`Email "${email}" already exists`);
+    }
+  }
+
+  private async generateAuthTokens(
+    userId: string,
+    email: string,
+    manager?: EntityManager,
+  ) {
+    const accessToken = this.generateAccessToken({ sub: userId, email });
+    const refreshToken = await this.refreshTokensService.create(
+      userId,
+      manager,
+    );
+    return { accessToken, refreshToken };
+  }
+
+  private generateAccessToken(payload: JwtPayload) {
+    const token = this.jwtService.sign(payload);
+    const expiresAt = calculateExpiresAt(
+      this.configService.get('JWT_EXPIRES_IN', { infer: true }),
+    );
+
+    return { token, expiresAt, tokenType: TOKEN_TYPE };
   }
 }
