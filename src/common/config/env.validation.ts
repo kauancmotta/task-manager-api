@@ -9,7 +9,9 @@ import {
   ValidateIf,
   IsNotEmpty,
   IsUrl,
+  IsOptional,
 } from 'class-validator';
+import type { StringValue } from 'ms';
 
 enum Environment {
   Development = 'development',
@@ -23,8 +25,16 @@ enum StorageProvider {
   S3 = 's3',
 }
 
+enum OAuthProvider {
+  Enabled = 'true',
+  Disabled = 'false',
+}
+
 const validateS3StorageProvider = (o: EnvironmentVariables) =>
   o.STORAGE_PROVIDER === StorageProvider.S3;
+
+const validateGoogleOAuth = (o: EnvironmentVariables) =>
+  o.GOOGLE_OAUTH_ENABLED === OAuthProvider.Enabled;
 
 class EnvironmentVariables {
   @IsEnum(Environment)
@@ -47,10 +57,10 @@ class EnvironmentVariables {
   JWT_SECRET!: string;
   @IsString()
   @IsNotEmpty()
-  JWT_EXPIRES_IN!: string;
+  JWT_EXPIRES_IN!: StringValue;
   @IsString()
   @IsNotEmpty()
-  JWT_REFRESH_EXPIRES_IN!: string;
+  JWT_REFRESH_EXPIRES_IN!: StringValue;
 
   @IsEnum(StorageProvider)
   STORAGE_PROVIDER!: StorageProvider;
@@ -74,6 +84,25 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   AWS_SECRET_ACCESS_KEY?: string;
+
+  @IsEnum(OAuthProvider)
+  @IsOptional()
+  GOOGLE_OAUTH_ENABLED?: OAuthProvider;
+
+  @ValidateIf(validateGoogleOAuth)
+  @IsString()
+  @IsNotEmpty()
+  GOOGLE_CLIENT_ID?: string;
+
+  @ValidateIf(validateGoogleOAuth)
+  @IsString()
+  @IsNotEmpty()
+  GOOGLE_CLIENT_SECRET?: string;
+
+  @ValidateIf(validateGoogleOAuth)
+  @IsString()
+  @IsNotEmpty()
+  GOOGLE_CALLBACK_URL?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -20,6 +20,8 @@ import {
   RefreshDto,
   RegisterDto,
 } from '@modules/auth/dto';
+import { GoogleAuthGuard } from '@modules/auth/guards/google.auth.guard';
+import { GoogleProfile } from '@modules/auth/interfaces';
 
 @Controller('auth')
 export class AuthController {
@@ -49,6 +51,19 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   logout(@Body() logoutDto: LogoutDto) {
     return this.refreshTokensService.revoke(logoutDto.refreshToken);
+  }
+
+  @Get('/google')
+  @UseGuards(GoogleAuthGuard)
+  google(): void {
+    // This method body is never executed.
+    // GoogleAuthGuard intercepts the request and redirects to Google OAuth2 consent screen.
+  }
+
+  @Get('/google/callback')
+  @UseGuards(GoogleAuthGuard)
+  googleCallback(@Request() req: AuthRequest<GoogleProfile>) {
+    return this.authService.loginWithGoogle(req.user);
   }
 
   @Get('me')
