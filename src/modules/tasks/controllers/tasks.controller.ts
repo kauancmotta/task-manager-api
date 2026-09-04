@@ -16,43 +16,61 @@ import {
   UpdateTaskDto,
   UpdateTaskStatusDto,
 } from '@modules/tasks/dto';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import type { JwtPayload } from '@modules/auth/interfaces';
 
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  findAll() {
-    return this.tasksService.findAll();
+  findAll(@CurrentUser() user: JwtPayload) {
+    return this.tasksService.findAll(user.sub);
   }
 
   @Get(':id')
-  findOne(@UuidParam('id') id: string) {
-    return this.tasksService.findOne(id);
+  findOne(@CurrentUser() user: JwtPayload, @UuidParam('id') taskId: string) {
+    return this.tasksService.findOne({ userId: user.sub, taskId });
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  create(
+    @CurrentUser() user: JwtPayload,
+    @Body() createTaskDto: CreateTaskDto,
+  ) {
+    return this.tasksService.create({ userId: user.sub, createTaskDto });
   }
 
   @Patch(':id')
-  update(@UuidParam('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(id, updateTaskDto);
+  update(
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('id') taskId: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ) {
+    return this.tasksService.update({
+      userId: user.sub,
+      taskId,
+      updateTaskDto,
+    });
   }
 
   @Patch(':id/status')
   updateStatus(
-    @UuidParam('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('id') taskId: string,
     @Body() updateTaskStatusDto: UpdateTaskStatusDto,
   ) {
-    return this.tasksService.updateStatus(id, updateTaskStatusDto);
+    return this.tasksService.updateStatus({
+      userId: user.sub,
+      taskId,
+      updateTaskStatusDto,
+    });
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@UuidParam('id') id: string) {
-    return this.tasksService.remove(id);
+  remove(@CurrentUser() user: JwtPayload, @UuidParam('id') taskId: string) {
+    return this.tasksService.remove({ userId: user.sub, taskId });
   }
 }
