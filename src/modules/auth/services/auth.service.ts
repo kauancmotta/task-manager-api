@@ -20,6 +20,7 @@ import { RefreshTokensService } from '@modules/auth/services/refresh-tokens.serv
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@common/config/env.config';
 import { TOKEN_TYPE } from '@common/constants/auth.constants';
+import { GoogleProfile } from '@modules/auth/interfaces';
 
 @Injectable()
 export class AuthService {
@@ -89,6 +90,38 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  async loginWithGoogle(googleProfile: GoogleProfile) {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email: googleProfile.email })
+      .orWhere('user.googleId = :googleId', {
+        googleId: googleProfile.googleId,
+      })
+      .getOne();
+
+    if (!user) {
+      return await this.registerWithGoogle(googleProfile);
+    }
+
+    if (!user.googleId) {
+      await this.userRepository.update(user.id, {
+        googleId: googleProfile.googleId,
+        avatarUrl: googleProfile.avatarUrl,
+      });
+
+      this.logger.log(`User ID: ${user.id} Google account linked successfully`);
+    }
+
+    const accessToken = this.generateAccessToken({
+      sub: user.id,
+      email: googleProfile.email,
+    });
+
+    const refreshToken = await this.refreshTokensService.create(user.id);
+
+    return { accessToken, refreshToken };
+  }
+
   private generateAccessToken(payload: JwtPayload) {
     const token = this.jwtService.sign(payload);
     const expiresAt = calculateExpiresAt(
@@ -104,5 +137,31 @@ export class AuthService {
     if (exists) {
       throw new ConflictException(`Email "${email}" already exists`);
     }
+  }
+
+  private async registerWithGoogle(googleProfile: GoogleProfile) {
+    return await this.dataSource.transaction(async (manager) => {
+      const user = this.userRepository.create({
+        email: googleProfile.email,
+        name: googleProfile.name,
+        googleId: googleProfile.googleId,
+        avatarUrl: googleProfile.avatarUrl,
+      });
+      await manager.save(User, user);
+
+      const accessToken = this.generateAccessToken({
+        sub: user.id,
+        email: googleProfile.email,
+      });
+
+      const refreshToken = await this.refreshTokensService.create(
+        user.id,
+        manager,
+      );
+
+      this.logger.log(`User ID: ${user.id} registered successfully`);
+
+      return { accessToken, refreshToken };
+    });
   }
 }
