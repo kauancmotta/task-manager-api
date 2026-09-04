@@ -1,12 +1,14 @@
 import 'dotenv/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { TypeOrmExceptionFilter } from '@common/filters/typeorm-exception.filter';
-import { AllExceptionsFilter } from '@common/filters/http-exception.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+
+import { AppModule } from './app.module';
+import { TypeOrmExceptionFilter } from '@common/filters/typeorm-exception.filter';
+import { AllExceptionsFilter } from '@common/filters/http-exception.filter';
+import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -15,6 +17,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.useLogger(app.get(Logger));
+  app.useGlobalGuards(new JwtAuthGuard(new Reflector()));
   app.enableCors();
   app.useGlobalPipes(
     new ValidationPipe({
