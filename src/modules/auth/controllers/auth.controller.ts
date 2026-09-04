@@ -9,7 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { AuthService } from '@modules/auth/services/auth.service';
 import { RefreshTokensService } from '@modules/auth/services/refresh-tokens.service';
 import { UsersService } from '@modules/users/services/users.service';
@@ -22,6 +21,7 @@ import {
 } from '@modules/auth/dto';
 import { GoogleAuthGuard } from '@modules/auth/guards/google.auth.guard';
 import { GoogleProfile } from '@modules/auth/interfaces';
+import { Public } from '@common/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -31,17 +31,20 @@ export class AuthController {
     private readonly usersService: UsersService,
   ) {}
 
+  @Public()
   @Post('/register')
   @HttpCode(HttpStatus.CREATED)
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
+  @Public()
   @Post('/login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
+  @Public()
   @Post('/refresh')
   refresh(@Body() refreshDto: RefreshDto) {
     return this.refreshTokensService.rotate(refreshDto.refreshToken);
@@ -53,6 +56,7 @@ export class AuthController {
     return this.refreshTokensService.revoke(logoutDto.refreshToken);
   }
 
+  @Public()
   @Get('/google')
   @UseGuards(GoogleAuthGuard)
   google(): void {
@@ -60,6 +64,7 @@ export class AuthController {
     // GoogleAuthGuard intercepts the request and redirects to Google OAuth2 consent screen.
   }
 
+  @Public()
   @Get('/google/callback')
   @UseGuards(GoogleAuthGuard)
   googleCallback(@Request() req: AuthRequest<GoogleProfile>) {
@@ -67,7 +72,6 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   getMe(@Request() req: AuthRequest) {
     return this.usersService.findOne(req.user.sub);
   }
