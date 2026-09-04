@@ -9,42 +9,57 @@ import {
   Post,
 } from '@nestjs/common';
 
-import { Category } from '@modules/categories/entities/categories.entity';
+import type { JwtPayload } from '@modules/auth/interfaces';
 import { CategoriesService } from '@modules/categories/services/categories.service';
 import { UuidParam } from '@common/decorators/uuid-param.decorator';
 import { CreateCategoryDto, UpdateCategoryDto } from '@modules/categories/dto';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  findAll() {
-    return this.categoriesService.findAll();
+  findAll(@CurrentUser() user: JwtPayload) {
+    return this.categoriesService.findAll(user.sub);
   }
 
   @Get(':id')
-  findOne(@UuidParam('id') id: string) {
-    return this.categoriesService.findOne(id);
+  findOne(
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('id') categoryId: string,
+  ) {
+    return this.categoriesService.findOne({ userId: user.sub, categoryId });
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoriesService.create(createCategoryDto);
+  create(
+    @CurrentUser() user: JwtPayload,
+    @Body() createCategoryDto: CreateCategoryDto,
+  ) {
+    return this.categoriesService.create({
+      userId: user.sub,
+      createCategoryDto,
+    });
   }
 
   @Patch(':id')
   update(
-    @UuidParam('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('id') categoryId: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
-  ): Promise<Category> {
-    return this.categoriesService.update(id, updateCategoryDto);
+  ) {
+    return this.categoriesService.update({
+      userId: user.sub,
+      categoryId,
+      updateCategoryDto,
+    });
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@UuidParam('id') id: string) {
-    return this.categoriesService.remove(id);
+  remove(@CurrentUser() user: JwtPayload, @UuidParam('id') categoryId: string) {
+    return this.categoriesService.remove({ userId: user.sub, categoryId });
   }
 }

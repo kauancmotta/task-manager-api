@@ -8,7 +8,12 @@ import { Not, Repository } from 'typeorm';
 import { Logger } from 'nestjs-pino';
 
 import { Category } from '@modules/categories/entities/categories.entity';
-import { CreateCategoryDto, UpdateCategoryDto } from '@modules/categories/dto';
+import {
+  CategoryContext,
+  CategoryContextWithCreateCategoryDto,
+  CategoryContextWithUpdateCategoryDto,
+  CategoryContextWithValidationName,
+} from '@modules/categories/interfaces';
 
 @Injectable()
 export class CategoriesService {
@@ -18,12 +23,14 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll() {
-    return this.categoryRepository.find();
+  async findAll(userId: string) {
+    return this.categoryRepository.find({ where: { createdByUserId: userId } });
   }
 
-  async findOne(id: string) {
-    const category = await this.categoryRepository.findOne({ where: { id } });
+  async findOne({ userId, categoryId }: CategoryContext) {
+    const category = await this.categoryRepository.findOne({
+      where: { id: categoryId, createdByUserId: userId },
+    });
 
     if (!category) {
       throw new NotFoundException('category not found');
@@ -32,10 +39,16 @@ export class CategoriesService {
     return category;
   }
 
-  async create(createCategoryDto: CreateCategoryDto) {
-    await this.validateExistName(createCategoryDto.name);
+  async create({
+    userId,
+    createCategoryDto,
+  }: CategoryContextWithCreateCategoryDto) {
+    await this.validateExistName({ userId, name: createCategoryDto.name });
 
-    const category = this.categoryRepository.create(createCategoryDto);
+    const category = this.categoryRepository.create({
+      ...createCategoryDto,
+      createdByUserId: userId,
+    });
     await this.categoryRepository.save(category);
 
     this.logger.log(`Category ID: ${category.id} created successfully`);
@@ -43,36 +56,55 @@ export class CategoriesService {
     return category;
   }
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+  async update({
+    userId,
+    categoryId,
+    updateCategoryDto,
+  }: CategoryContextWithUpdateCategoryDto) {
     if (updateCategoryDto.name) {
-      await this.validateExistName(updateCategoryDto.name, id);
+      await this.validateExistName({
+        userId,
+        name: updateCategoryDto.name,
+        excludeCategoryId: categoryId,
+      });
     }
 
-    const result = await this.categoryRepository.update(id, updateCategoryDto);
+    const result = await this.categoryRepository.update(
+      { id: categoryId, createdByUserId: userId },
+      updateCategoryDto,
+    );
 
     if (!result.affected) {
-      throw new NotFoundException(`Category ${id} not found`);
+      throw new NotFoundException(`Category ${categoryId} not found`);
     }
 
-    this.logger.log(`Category ID: ${id} updated successfully`);
+    this.logger.log(`Category ID: ${categoryId} updated successfully`);
 
-    return this.findOne(id);
+    return this.findOne({ userId, categoryId });
   }
 
-  async remove(id: string) {
-    const result = await this.categoryRepository.delete(id);
+  async remove({ userId, categoryId }: CategoryContext) {
+    const result = await this.categoryRepository.delete({
+      createdByUserId: userId,
+      id: categoryId,
+    });
 
     if (!result.affected) {
-      throw new NotFoundException(`Category ${id} not found`);
+      throw new NotFoundException(`Category ${categoryId} not found`);
     }
 
-    this.logger.log(`Category ID: ${id} removed successfully`);
+    this.logger.log(`Category ID: ${categoryId} removed successfully`);
   }
 
-  private async validateExistName(name: string, excludeId?: string) {
+  private async validateExistName({
+    userId,
+    name,
+    excludeCategoryId,
+  }: CategoryContextWithValidationName) {
     const exists = await this.categoryRepository.existsBy({
       name,
-      ...(excludeId && { id: Not(excludeId) }),
+      createdByUserId: userId,
+      ...(excludeCategoryId && { id: Not(excludeCategoryId) }),
     });
 
     if (exists) {
