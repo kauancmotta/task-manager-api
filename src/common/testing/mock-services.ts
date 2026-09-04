@@ -17,7 +17,6 @@ export const createMockCategoriesService = (): Partial<
 export const createMockUsersService = (): Partial<
   Record<keyof UsersService, Mock>
 > => ({
-  findAll: vi.fn(),
   findOne: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
