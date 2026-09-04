@@ -5,9 +5,10 @@ import { Logger } from 'nestjs-pino';
 
 import { TaskAssignee } from '@modules/tasks/entities/task-assignee.entity';
 import { Task } from '@modules/tasks/entities/task.entity';
-import { User } from '@modules/users/entities/user.entity';
-import { CreateTaskAssigneeDto } from '@modules/tasks/dto/create-task-assignee.dto';
-
+import {
+  TaskContext,
+  TaskContextWithAssigneeId,
+} from '@modules/tasks/interfaces';
 @Injectable()
 export class TaskAssigneesService {
   constructor(
@@ -16,32 +17,29 @@ export class TaskAssigneesService {
     private readonly taskAssigneeRepository: Repository<TaskAssignee>,
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
   ) {}
 
-  async findAll(taskId: string) {
-    return this.taskAssigneeRepository.find({ where: { taskId } });
+  async findAll({ userId, taskId }: TaskContext) {
+    return this.taskAssigneeRepository.find({ where: { taskId, userId } });
   }
 
-  async findOne(taskId: string, id: string) {
+  async findOne({ userId, taskId, assigneeId }: TaskContextWithAssigneeId) {
     const taskAssignee = await this.taskAssigneeRepository.findOne({
-      where: { id, taskId },
+      where: { userId, taskId, id: assigneeId },
     });
 
     if (!taskAssignee) {
-      throw new NotFoundException(`Task Assignee ${id} not found`);
+      throw new NotFoundException(`Task Assignee ${assigneeId} not found`);
     }
 
     return taskAssignee;
   }
 
-  async create(taskId: string, createTaskAssigneeDto: CreateTaskAssigneeDto) {
-    await this.validateExistTask(taskId);
-    await this.validateExistUser(createTaskAssigneeDto.userId);
+  async create({ userId, taskId }: TaskContext) {
+    await this.validateExistTask({ userId, taskId });
 
     const taskAssignee = this.taskAssigneeRepository.create({
-      ...createTaskAssigneeDto,
+      userId,
       taskId,
     });
     await this.taskAssigneeRepository.save(taskAssignee);
@@ -53,29 +51,27 @@ export class TaskAssigneesService {
     return taskAssignee;
   }
 
-  async remove(taskId: string, id: string) {
-    const result = await this.taskAssigneeRepository.softDelete({ id, taskId });
+  async remove({ userId, taskId, assigneeId }: TaskContextWithAssigneeId) {
+    const result = await this.taskAssigneeRepository.softDelete({
+      userId,
+      taskId,
+      id: assigneeId,
+    });
 
     if (!result.affected) {
-      throw new NotFoundException(`Task Assignee ${id} not found`);
+      throw new NotFoundException(`Task Assignee ${assigneeId} not found`);
     }
 
-    this.logger.log(`Task Assignee ID: ${id} deleted successfully`);
+    this.logger.log(`Task Assignee ID: ${assigneeId} deleted successfully`);
   }
 
-  private async validateExistTask(id: string) {
-    const exists = await this.taskRepository.exists({ where: { id } });
+  private async validateExistTask({ userId, taskId }: TaskContext) {
+    const exists = await this.taskRepository.exists({
+      where: { createdByUserId: userId, id: taskId },
+    });
 
     if (!exists) {
-      throw new NotFoundException(`Task ${id} not found`);
-    }
-  }
-
-  private async validateExistUser(id: string) {
-    const exists = await this.userRepository.exists({ where: { id } });
-
-    if (!exists) {
-      throw new NotFoundException(`User ${id} not found`);
+      throw new NotFoundException(`Task ${taskId} not found`);
     }
   }
 }

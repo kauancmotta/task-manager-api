@@ -6,6 +6,11 @@ import { Logger } from 'nestjs-pino';
 import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
 import { Task } from '@modules/tasks/entities/task.entity';
 import { StorageService } from '@common/storage/storage.interface';
+import {
+  TaskContext,
+  TaskContextWithAttachmentId,
+  TaskContextWithFile,
+} from '@modules/tasks/interfaces';
 
 @Injectable()
 export class TaskAttachmentsService {
@@ -19,19 +24,20 @@ export class TaskAttachmentsService {
     private readonly storageService: StorageService,
   ) {}
 
-  async findAll(taskId: string) {
+  async findAll({ userId, taskId }: TaskContext) {
     return this.taskAttachmentRepository.find({
-      where: { taskId },
+      where: { taskId, uploadedByUserId: userId },
     });
   }
 
-  async create(taskId: string, file: Express.Multer.File) {
+  async create({ userId, taskId, file }: TaskContextWithFile) {
     await this.validateExistTask(taskId);
 
     const fileUrl = await this.storageService.upload(file);
 
     const taskAttachment = this.taskAttachmentRepository.create({
       taskId,
+      uploadedByUserId: userId,
       fileUrl,
       fileName: file.originalname,
       fileSize: file.size,
@@ -47,26 +53,30 @@ export class TaskAttachmentsService {
     return taskAttachment;
   }
 
-  async remove(id: string, taskId: string) {
+  async remove({ userId, taskId, attachmentId }: TaskContextWithAttachmentId) {
     const attachment = await this.taskAttachmentRepository.findOne({
-      where: { id, taskId },
+      where: { taskId, uploadedByUserId: userId, id: attachmentId },
     });
 
     if (!attachment) {
-      throw new NotFoundException(`Task Attachment ${id} not found`);
+      throw new NotFoundException(`Task Attachment ${attachmentId} not found`);
     }
 
     await this.storageService.delete(attachment.fileUrl);
-    await this.taskAttachmentRepository.softDelete({ id, taskId });
+    await this.taskAttachmentRepository.softDelete({
+      id: attachmentId,
+      taskId,
+      uploadedByUserId: userId,
+    });
 
-    this.logger.log(`Task Attachment ID: ${id} deleted successfully`);
+    this.logger.log(`Task Attachment ID: ${attachmentId} deleted successfully`);
   }
 
-  private async validateExistTask(id: string) {
-    const exists = await this.taskRepository.existsBy({ id });
+  private async validateExistTask(taskId: string) {
+    const exists = await this.taskRepository.existsBy({ id: taskId });
 
     if (!exists) {
-      throw new NotFoundException(`Task ${id} not found`);
+      throw new NotFoundException(`Task ${taskId} not found`);
     }
   }
 }

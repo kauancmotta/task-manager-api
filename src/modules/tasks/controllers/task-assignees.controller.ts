@@ -6,37 +6,55 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 
 import { UuidParam } from '@common/decorators/uuid-param.decorator';
-import { CreateTaskAssigneeDto } from '@modules/tasks/dto';
 import { TaskAssigneesService } from '@modules/tasks/services/task-assignees.service';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import type { JwtPayload } from '@modules/auth/interfaces';
 
 @Controller('tasks/:taskId/assignees')
 export class TaskAssigneesController {
   constructor(private readonly taskAssigneesService: TaskAssigneesService) {}
   @Get()
-  findAll(@UuidParam('taskId') taskId: string) {
-    return this.taskAssigneesService.findAll(taskId);
+  findAll(
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('taskId') taskId: string,
+  ) {
+    return this.taskAssigneesService.findAll({ userId: user.sub, taskId });
   }
 
   @Get(':id')
-  findOne(@UuidParam('taskId') taskId: string, @UuidParam('id') id: string) {
-    return this.taskAssigneesService.findOne(taskId, id);
+  findOne(
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('taskId') taskId: string,
+    @UuidParam('id') assigneeId: string,
+  ) {
+    return this.taskAssigneesService.findOne({
+      userId: user.sub,
+      taskId,
+      assigneeId,
+    });
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @UuidParam('taskId') taskId: string,
-    @Body() createTaskAssigneeDto: CreateTaskAssigneeDto,
-  ) {
-    return this.taskAssigneesService.create(taskId, createTaskAssigneeDto);
+  create(@CurrentUser() user: JwtPayload, @UuidParam('taskId') taskId: string) {
+    return this.taskAssigneesService.create({ userId: user.sub, taskId });
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@UuidParam('taskId') taskId: string, @UuidParam('id') id: string) {
-    return this.taskAssigneesService.remove(taskId, id);
+  remove(
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('taskId') taskId: string,
+    @UuidParam('id') assigneeId: string,
+  ) {
+    return this.taskAssigneesService.remove({
+      userId: user.sub,
+      taskId,
+      assigneeId,
+    });
   }
 }

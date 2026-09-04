@@ -8,9 +8,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { User } from '@modules/users/entities/user.entity';
-import { CreateUserDto, UpdateUserDto } from '@modules/users/dto';
+import { CreateUserDto } from '@modules/users/dto';
 import { Logger } from 'nestjs-pino';
 import { StorageService } from '@common/storage/storage.interface';
+import {
+  UserContextWithAvatar,
+  UserContextWithUpdateUserDto,
+} from '@modules/users/interfaces';
 
 @Injectable()
 export class UsersService {
@@ -21,10 +25,6 @@ export class UsersService {
     @Inject('STORAGE_SERVICE')
     private readonly storageService: StorageService,
   ) {}
-
-  async findAll() {
-    return this.userRepository.find();
-  }
 
   async findOne(id: string) {
     const user = await this.userRepository.findOne({ where: { id } });
@@ -47,32 +47,32 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const result = await this.userRepository.update(id, updateUserDto);
+  async update({ userId, updateUserDto }: UserContextWithUpdateUserDto) {
+    const result = await this.userRepository.update(userId, updateUserDto);
 
     if (!result.affected) {
-      throw new NotFoundException(`User ${id} not found`);
+      throw new NotFoundException(`User ${userId} not found`);
     }
 
-    this.logger.log(`User ID: ${id} updated successfully`);
+    this.logger.log(`User ID: ${userId} updated successfully`);
 
-    return this.findOne(id);
+    return this.findOne(userId);
   }
 
-  async updateAvatar(id: string, avatar: Express.Multer.File) {
-    const user = await this.findOne(id);
+  async updateAvatar({ userId, avatarFile }: UserContextWithAvatar) {
+    const user = await this.findOne(userId);
 
     if (user.avatarUrl) {
       await this.storageService.delete(user.avatarUrl);
     }
 
-    const avatarUrl = await this.storageService.upload(avatar);
+    const avatarUrl = await this.storageService.upload(avatarFile);
 
-    await this.userRepository.update(id, { avatarUrl });
+    await this.userRepository.update(userId, { avatarUrl });
 
-    this.logger.log(`User ID: ${id} avatar updated successfully`);
+    this.logger.log(`User ID: ${userId} avatar updated successfully`);
 
-    return this.findOne(id);
+    return this.findOne(userId);
   }
 
   async removeAvatar(id: string) {

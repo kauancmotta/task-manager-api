@@ -21,8 +21,8 @@ export class TaskAttachment extends BaseEntity {
   @Column({ name: 'task_id' })
   taskId!: string;
 
-  @Column({ name: 'uploaded_by_user_id', nullable: true })
-  uploadedByUserId?: string | null;
+  @Column({ name: 'uploaded_by_user_id' })
+  uploadedByUserId!: string;
 
   @ManyToOne(() => Task, (task) => task.taskAttachments)
   @JoinColumn({
@@ -31,10 +31,10 @@ export class TaskAttachment extends BaseEntity {
   })
   task!: Task;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, (user) => user.taskAttachments)
   @JoinColumn({
     name: 'uploaded_by_user_id',
     foreignKeyConstraintName: 'fk_task_attachments_uploaded_by_user_id',
   })
-  uploadedByUser?: User | null;
+  uploadedByUser!: User;
 }

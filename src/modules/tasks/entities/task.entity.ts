@@ -28,9 +28,8 @@ export class Task extends BaseEntity {
   @Column({ name: 'due_date', type: 'timestamptz', nullable: true })
   dueDate?: Date;
 
-  // NULLABLE TEMPORARY!!!
-  @Column({ name: 'created_by_user_id', nullable: true })
-  createdByUserId?: string;
+  @Column({ name: 'created_by_user_id' })
+  createdByUserId!: string;
 
   @ManyToOne(() => Category, (category) => category.tasks, { nullable: true })
   @JoinColumn({
@@ -44,7 +43,7 @@ export class Task extends BaseEntity {
     name: 'created_by_user_id',
     foreignKeyConstraintName: 'fk_tasks_created_by_user_id',
   })
-  createdByUser?: User; // OPTIONAL TEMPORARY!!!
+  createdByUser!: User;
 
   @OneToMany(() => TaskAssignee, (taskAssignee) => taskAssignee.task)
   taskAssignees!: TaskAssignee[];
