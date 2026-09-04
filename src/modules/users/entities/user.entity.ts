@@ -5,6 +5,8 @@ import { TaskAssignee } from '@modules/tasks/entities/task-assignee.entity';
 import { Task } from '@modules/tasks/entities/task.entity';
 import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
 import { Exclude } from 'class-transformer';
+import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
+import { Category } from '@modules/categories/entities/categories.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -27,9 +29,18 @@ export class User extends BaseEntity {
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   refreshTokens!: RefreshToken[];
 
+  @OneToMany(() => Category, (category) => category.createdByUser)
+  categories!: Category[];
+
   @OneToMany(() => Task, (task) => task.createdByUser)
   tasks!: Task[];
 
   @OneToMany(() => TaskAssignee, (taskAssignee) => taskAssignee.user)
   taskAssignees!: TaskAssignee[];
+
+  @OneToMany(
+    () => TaskAttachment,
+    (taskAttachment) => taskAttachment.uploadedByUser,
+  )
+  taskAttachments!: TaskAttachment[];
 }
