@@ -20,8 +20,9 @@ import {
   RegisterDto,
 } from '@modules/auth/dto';
 import { GoogleAuthGuard } from '@modules/auth/guards/google.auth.guard';
-import { GoogleProfile } from '@modules/auth/interfaces';
+import type { GoogleProfile, JwtPayload } from '@modules/auth/interfaces';
 import { Public } from '@common/decorators/public.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -72,7 +73,7 @@ export class AuthController {
   }
 
   @Get('me')
-  getMe(@Request() req: AuthRequest) {
-    return this.usersService.findOne(req.user.sub);
+  getMe(@CurrentUser() user: JwtPayload) {
+    return this.usersService.findOne(user.sub);
   }
 }
