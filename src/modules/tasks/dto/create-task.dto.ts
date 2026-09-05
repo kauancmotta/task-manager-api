@@ -1,4 +1,5 @@
 import { TaskPriority } from '@modules/tasks/enums/task-priority.enum';
+import { Type } from 'class-transformer';
 import {
   IsDate,
   IsEnum,
@@ -27,5 +28,6 @@ export class CreateTaskDto {
 
   @IsDate()
   @IsOptional()
+  @Type(() => Date)
   dueDate?: Date;
 }

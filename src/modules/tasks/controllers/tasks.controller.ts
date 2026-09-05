@@ -7,12 +7,14 @@ import {
   Delete,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 
 import { UuidParam } from '@common/decorators/uuid-param.decorator';
 import { TasksService } from '@modules/tasks/services/tasks.service';
 import {
   CreateTaskDto,
+  FindAllTasksDto,
   UpdateTaskDto,
   UpdateTaskStatusDto,
 } from '@modules/tasks/dto';
@@ -24,8 +26,8 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.tasksService.findAll(user.sub);
+  findAll(@CurrentUser() user: JwtPayload, @Query() filters: FindAllTasksDto) {
+    return this.tasksService.findAll(user.sub, filters);
   }
 
   @Get(':id')

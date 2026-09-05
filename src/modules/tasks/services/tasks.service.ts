@@ -10,13 +10,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from '@modules/tasks/entities/task.entity';
 import { Category } from '@modules/categories/entities/categories.entity';
 import { TaskStatus } from '@modules/tasks/enums/task-status.enum';
-import { TaskMapper } from '@modules/tasks/mappers/task.mapper';
+import { TaskMapper, TaskPresenter } from '@modules/tasks/mappers/task.mapper';
 import {
   TaskContext,
   TaskContextWithCreateTaskDto,
   TaskContextWithUpdateTaskDto,
   TaskContextWithUpdateTaskStatusDto,
 } from '@modules/tasks/interfaces';
+import { PaginatedResponse } from '@common/interfaces';
+import { FindAllTasksDto } from '@modules/tasks/dto';
 
 @Injectable()
 export class TasksService {
@@ -28,12 +30,53 @@ export class TasksService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll(userId: string) {
-    const tasks = await this.taskRepository.find({
-      where: { createdByUserId: userId },
-    });
+  async findAll(
+    userId: string,
+    filters: FindAllTasksDto,
+  ): Promise<PaginatedResponse<TaskPresenter>> {
+    const query = this.taskRepository
+      .createQueryBuilder('task')
+      .where('task.createdByUserId = :userId', { userId });
 
-    return TaskMapper.toPresenterList(tasks);
+    if (filters.priority) {
+      query.andWhere('task.priority = :priority', {
+        priority: filters.priority,
+      });
+    }
+
+    if (filters.status) {
+      query.andWhere('task.status = :status', { status: filters.status });
+    }
+
+    if (filters.dueDateBefore) {
+      query.andWhere('task.dueDate <= :dueDateBefore', {
+        dueDateBefore: filters.dueDateBefore,
+      });
+    }
+
+    if (filters.dueDateAfter) {
+      query.andWhere('task.dueDate >= :dueDateAfter', {
+        dueDateAfter: filters.dueDateAfter,
+      });
+    }
+
+    query
+      .orderBy('task.priority', 'DESC')
+      .addOrderBy('task.dueDate', 'ASC')
+      .take(filters.limit)
+      .skip((filters.page - 1) * filters.limit);
+
+    const [tasks, total] = await query.getManyAndCount();
+
+    return {
+      data: TaskMapper.toPresenterList(tasks),
+      meta: {
+        total,
+        totalPages: Math.ceil(total / filters.limit),
+        currentPage: filters.page,
+        limit: filters.limit,
+      },
+    };
   }
 
   async findOne({ userId, taskId }: TaskContext) {
