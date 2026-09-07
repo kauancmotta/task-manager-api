@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Logger } from 'nestjs-pino';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -14,6 +14,8 @@ import { TaskMapper, TaskPresenter } from '@modules/tasks/mappers/task.mapper';
 import {
   TaskContext,
   TaskContextWithCreateTaskDto,
+  TaskContextWithCategoryId,
+  TaskContextWithUpdateTaskCategoriesDto,
   TaskContextWithUpdateTaskDto,
   TaskContextWithUpdateTaskStatusDto,
 } from '@modules/tasks/interfaces';
@@ -50,7 +52,8 @@ export class TasksService {
   private async buildQueryTasks(userId: string, filters: FindAllTasksDto) {
     const query = this.taskRepository
       .createQueryBuilder('task')
-      .where('task.createdByUserId = :userId', { userId });
+      .where('task.createdByUserId = :userId', { userId })
+      .innerJoinAndSelect('task.categories', 'categories');
 
     if (filters.priority) {
       query.andWhere('task.priority = :priority', {
@@ -74,6 +77,12 @@ export class TasksService {
       });
     }
 
+    if (filters.categoryIds?.length) {
+      query.andWhere('categories.id IN (:...categoryIds)', {
+        categoryIds: filters.categoryIds,
+      });
+    }
+
     if (filters.search) {
       query.andWhere('task.name ILIKE :name', {
         name: `%${filters.search}%`,
@@ -83,7 +92,7 @@ export class TasksService {
     query
       .orderBy('task.priority', 'DESC')
       .addOrderBy('task.dueDate', 'ASC')
-      .addOrderBy('task.updated_at', 'DESC')
+      .addOrderBy('task.updatedAt', 'DESC')
       .take(filters.limit)
       .skip((filters.page - 1) * filters.limit);
 
@@ -93,6 +102,7 @@ export class TasksService {
   async findOne({ userId, taskId }: TaskContext) {
     const task = await this.taskRepository.findOne({
       where: { id: taskId, createdByUserId: userId },
+      relations: { categories: true },
     });
 
     if (!task) {
@@ -103,19 +113,21 @@ export class TasksService {
   }
 
   async create({ userId, createTaskDto }: TaskContextWithCreateTaskDto) {
-    if (createTaskDto.categoryId) {
-      await this.validateExistCategory(createTaskDto.categoryId);
-    }
+    const categories = await this.findCategoriesWithIds(
+      userId,
+      createTaskDto.categoryIds,
+    );
 
     const task = this.taskRepository.create({
       ...createTaskDto,
+      categories,
       createdByUserId: userId,
     });
     await this.taskRepository.save(task);
 
     this.logger.log(`Task ID: ${task.id} created successfully`);
 
-    return task;
+    return this.findOne({ userId, taskId: task.id });
   }
 
   async update({
@@ -123,10 +135,6 @@ export class TasksService {
     taskId,
     updateTaskDto,
   }: TaskContextWithUpdateTaskDto) {
-    if (updateTaskDto.categoryId) {
-      await this.validateExistCategory(updateTaskDto.categoryId);
-    }
-
     const result = await this.taskRepository.update(
       { id: taskId, createdByUserId: userId },
       updateTaskDto,
@@ -141,12 +149,35 @@ export class TasksService {
     return this.findOne({ userId, taskId });
   }
 
+  async updateCategories({
+    userId,
+    taskId,
+    updateTaskCategoriesDto,
+  }: TaskContextWithUpdateTaskCategoriesDto) {
+    await this.findOneWithoutMapper({ userId, taskId });
+
+    const categories = await this.findCategoriesWithIds(
+      userId,
+      updateTaskCategoriesDto.categoryIds,
+    );
+
+    await this.taskRepository
+      .createQueryBuilder()
+      .relation(Task, 'categories')
+      .of(taskId)
+      .add(categories.map((category) => category.id));
+
+    this.logger.log(`Task ID: ${taskId} categories updated successfully`);
+
+    return this.findOne({ userId, taskId });
+  }
+
   async updateStatus({
     userId,
     taskId,
     updateTaskStatusDto,
   }: TaskContextWithUpdateTaskStatusDto) {
-    const task = await this.findOne({ userId, taskId });
+    const task = await this.findOneWithoutMapper({ userId, taskId });
 
     if (!this.isValidTransition(task.status, updateTaskStatusDto.status)) {
       throw new BadRequestException(
@@ -178,11 +209,73 @@ export class TasksService {
     this.logger.log(`Task ID: ${taskId} deleted successfully`);
   }
 
-  private async validateExistCategory(id: string) {
-    const exists = await this.categoryRepository.exists({ where: { id } });
+  async removeTaskCategory({
+    userId,
+    taskId,
+    categoryId,
+  }: TaskContextWithCategoryId) {
+    await this.validateTaskCategoryRemoval({ userId, taskId, categoryId });
 
-    if (!exists) {
-      throw new NotFoundException(`Category ${id} not found`);
+    await this.taskRepository
+      .createQueryBuilder()
+      .relation(Task, 'categories')
+      .of(taskId)
+      .remove(categoryId);
+
+    this.logger.log(
+      `Category ID: ${categoryId} removed from Task ID: ${taskId}`,
+    );
+  }
+
+  private async findOneWithoutMapper({ userId, taskId }: TaskContext) {
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId, createdByUserId: userId },
+    });
+
+    if (!task) {
+      throw new NotFoundException(`Task ID: ${taskId} not found`);
+    }
+
+    return task;
+  }
+
+  private async findCategoriesWithIds(userId: string, categoryIds: string[]) {
+    const categories = await this.categoryRepository.findBy({
+      id: In(categoryIds),
+      createdByUserId: userId,
+    });
+
+    if (categories.length !== categoryIds.length) {
+      throw new NotFoundException('One or more categories not found');
+    }
+
+    return categories;
+  }
+
+  private async validateTaskCategoryRemoval({
+    userId,
+    taskId,
+    categoryId,
+  }: TaskContextWithCategoryId) {
+    const result = await this.taskRepository
+      .createQueryBuilder('task')
+      .innerJoin('task.categories', 'category')
+      .where('task.id = :taskId', { taskId })
+      .andWhere('task.createdByUserId = :userId', { userId })
+      .select('COUNT(category.id)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN category.id = :categoryId THEN 1 ELSE 0 END)`,
+        'hasCategory',
+      )
+      .setParameter('categoryId', categoryId)
+      .getRawOne<{ total: string; hasCategory: string }>();
+
+    if (!Number(result?.hasCategory)) {
+      throw new BadRequestException('No category was found for this task');
+    }
+
+    if (Number(result?.total) <= 1) {
+      throw new BadRequestException('Task must have at least one category');
     }
   }
 

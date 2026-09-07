@@ -15,6 +15,7 @@ import { TasksService } from '@modules/tasks/services/tasks.service';
 import {
   CreateTaskDto,
   FindAllTasksDto,
+  UpdateTaskCategoriesDto,
   UpdateTaskDto,
   UpdateTaskStatusDto,
 } from '@modules/tasks/dto';
@@ -57,6 +58,19 @@ export class TasksController {
     });
   }
 
+  @Patch(':id/categories')
+  updateCategories(
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('id') taskId: string,
+    @Body() updateTaskCategoriesDto: UpdateTaskCategoriesDto,
+  ) {
+    return this.tasksService.updateCategories({
+      userId: user.sub,
+      taskId,
+      updateTaskCategoriesDto,
+    });
+  }
+
   @Patch(':id/status')
   updateStatus(
     @CurrentUser() user: JwtPayload,
@@ -74,5 +88,19 @@ export class TasksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@CurrentUser() user: JwtPayload, @UuidParam('id') taskId: string) {
     return this.tasksService.remove({ userId: user.sub, taskId });
+  }
+
+  @Delete(':id/:categoryId/category')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeTaskCategory(
+    @CurrentUser() user: JwtPayload,
+    @UuidParam('id') taskId: string,
+    @UuidParam('categoryId') categoryId: string,
+  ) {
+    return this.tasksService.removeTaskCategory({
+      userId: user.sub,
+      taskId,
+      categoryId,
+    });
   }
 }
