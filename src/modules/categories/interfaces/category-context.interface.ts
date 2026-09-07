@@ -1,4 +1,8 @@
-import { CreateCategoryDto, UpdateCategoryDto } from '@modules/categories/dto';
+import {
+  CategoryFilterDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+} from '@modules/categories/dto';
 
 export interface CategoryContext {
   userId: string;
@@ -22,4 +26,8 @@ export type CategoryContextWithValidationName = Omit<
 > & {
   name: string;
   excludeCategoryId?: string;
+};
+
+export type CategoryContextFilters = Omit<CategoryContext, 'categoryId'> & {
+  filters: CategoryFilterDto;
 };

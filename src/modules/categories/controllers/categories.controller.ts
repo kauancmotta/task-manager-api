@@ -7,12 +7,17 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import type { JwtPayload } from '@modules/auth/interfaces';
 import { CategoriesService } from '@modules/categories/services/categories.service';
 import { UuidParam } from '@common/decorators/uuid-param.decorator';
-import { CreateCategoryDto, UpdateCategoryDto } from '@modules/categories/dto';
+import {
+  CategoryFilterDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+} from '@modules/categories/dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
 @Controller('categories')
@@ -20,8 +25,11 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.categoriesService.findAll(user.sub);
+  findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query() filters: CategoryFilterDto,
+  ) {
+    return this.categoriesService.findAll({ userId: user.sub, filters });
   }
 
   @Get(':id')
