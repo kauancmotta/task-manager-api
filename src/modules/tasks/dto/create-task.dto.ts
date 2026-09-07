@@ -1,6 +1,8 @@
 import { TaskPriority } from '@modules/tasks/enums/task-priority.enum';
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
+  IsArray,
   IsDate,
   IsEnum,
   IsNotEmpty,
@@ -23,9 +25,10 @@ export class CreateTaskDto {
   @IsOptional()
   priority!: TaskPriority;
 
-  @IsUUID('7', { message: 'CategoryId must UUID V7 format' })
-  @IsOptional()
-  categoryId?: string;
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('7', { each: true, message: 'categoryIds must UUID V7 format' })
+  categoryIds!: string[];
 
   @IsDate()
   @IsOptional()

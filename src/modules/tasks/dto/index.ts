@@ -1,6 +1,8 @@
 export * from './create-task.dto';
 export * from './update-task.dto';
 
+export * from './update-task-categories.dto';
+
 export * from './update-task-status.dto';
 
 export * from './task-filter.dto';

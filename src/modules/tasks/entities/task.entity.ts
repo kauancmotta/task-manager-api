@@ -1,4 +1,12 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 
 import { BaseEntity } from '@common/entities/base.entity';
 import { TaskPriority } from '@modules/tasks/enums/task-priority.enum';
@@ -22,21 +30,25 @@ export class Task extends BaseEntity {
   @Column({ type: 'int', default: TaskPriority.LOW })
   priority!: TaskPriority;
 
-  @Column({ name: 'category_id', nullable: true })
-  categoryId?: string;
-
   @Column({ name: 'due_date', type: 'timestamptz', nullable: true })
   dueDate?: Date;
 
   @Column({ name: 'created_by_user_id' })
   createdByUserId!: string;
 
-  @ManyToOne(() => Category, (category) => category.tasks, { nullable: true })
-  @JoinColumn({
-    name: 'category_id',
-    foreignKeyConstraintName: 'fk_tasks_category_id',
+  @ManyToMany(() => Category, (category) => category.tasks)
+  @JoinTable({
+    name: 'task_categories',
+    joinColumn: {
+      name: 'task_id',
+      foreignKeyConstraintName: 'fk_task_categories_task_id',
+    },
+    inverseJoinColumn: {
+      name: 'category_id',
+      foreignKeyConstraintName: 'fk_task_categories_category_id',
+    },
   })
-  category?: Category;
+  categories!: Category[];
 
   @ManyToOne(() => User, (user) => user.tasks)
   @JoinColumn({

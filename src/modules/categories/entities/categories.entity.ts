@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, ManyToMany } from 'typeorm';
 
 import { BaseWithoutSoftDeleteEntity } from '@common/entities/base-without-soft-delete.entity';
 import { Task } from '@modules/tasks/entities/task.entity';
@@ -18,7 +18,7 @@ export class Category extends BaseWithoutSoftDeleteEntity {
   @Column({ name: 'created_by_user_id' })
   createdByUserId!: string;
 
-  @OneToMany(() => Task, (task) => task.category)
+  @ManyToMany(() => Task, (task) => task.categories)
   tasks!: Task[];
 
   @ManyToOne(() => User, (user) => user.categories)
