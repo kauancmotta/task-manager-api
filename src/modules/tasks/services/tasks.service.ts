@@ -154,7 +154,7 @@ export class TasksService {
     taskId,
     updateTaskCategoriesDto,
   }: TaskContextWithUpdateTaskCategoriesDto) {
-    await this.findOneWithoutMapper({ userId, taskId });
+    await this.findOne({ userId, taskId });
 
     const categories = await this.findCategoriesWithIds(
       userId,
@@ -177,7 +177,7 @@ export class TasksService {
     taskId,
     updateTaskStatusDto,
   }: TaskContextWithUpdateTaskStatusDto) {
-    const task = await this.findOneWithoutMapper({ userId, taskId });
+    const task = await this.findOne({ userId, taskId });
 
     if (!this.isValidTransition(task.status, updateTaskStatusDto.status)) {
       throw new BadRequestException(
@@ -225,18 +225,6 @@ export class TasksService {
     this.logger.log(
       `Category ID: ${categoryId} removed from Task ID: ${taskId}`,
     );
-  }
-
-  private async findOneWithoutMapper({ userId, taskId }: TaskContext) {
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId, createdByUserId: userId },
-    });
-
-    if (!task) {
-      throw new NotFoundException(`Task ID: ${taskId} not found`);
-    }
-
-    return task;
   }
 
   private async findCategoriesWithIds(userId: string, categoryIds: string[]) {
