@@ -1,5 +1,6 @@
 import {
   CreateTaskDto,
+  UpdateTaskCategoriesDto,
   UpdateTaskDto,
   UpdateTaskStatusDto,
 } from '@modules/tasks/dto';
@@ -15,8 +16,15 @@ export type TaskContextWithCreateTaskDto = Omit<TaskContext, 'taskId'> & {
 export type TaskContextWithUpdateTaskDto = TaskContext & {
   updateTaskDto: UpdateTaskDto;
 };
+export type TaskContextWithUpdateTaskCategoriesDto = TaskContext & {
+  updateTaskCategoriesDto: UpdateTaskCategoriesDto;
+};
 export type TaskContextWithUpdateTaskStatusDto = TaskContext & {
   updateTaskStatusDto: UpdateTaskStatusDto;
+};
+
+export type TaskContextWithCategoryId = TaskContext & {
+  categoryId: string;
 };
 
 export type TaskContextWithAssigneeId = TaskContext & { assigneeId: string };
