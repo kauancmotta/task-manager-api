@@ -1,14 +1,21 @@
 import { TaskPriority } from '@modules/tasks/enums/task-priority.enum';
 import { TaskStatus } from '@modules/tasks/enums/task-status.enum';
-import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class TaskFilterDto {
-  @IsEnum(TaskPriority)
   @IsOptional()
+  @IsEnum(TaskPriority)
   priority?: TaskPriority;
 
-  @IsEnum(TaskStatus)
   @IsOptional()
+  @IsEnum(TaskStatus)
   status?: TaskStatus;
 
   @IsOptional()
@@ -18,6 +25,11 @@ export class TaskFilterDto {
   @IsOptional()
   @IsDateString()
   dueDateAfter?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('7', { each: true, message: 'categoryIds must UUID V7 format' })
+  categoryIds?: string[];
 
   @IsOptional()
   @IsString()
