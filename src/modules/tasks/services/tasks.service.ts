@@ -19,6 +19,7 @@ import {
 } from '@modules/tasks/interfaces';
 import { PaginatedResponse } from '@common/interfaces';
 import { FindAllTasksDto } from '@modules/tasks/dto';
+import { buildPaginationMeta } from '@common/utils';
 
 @Injectable()
 export class TasksService {
@@ -34,6 +35,19 @@ export class TasksService {
     userId: string,
     filters: FindAllTasksDto,
   ): Promise<PaginatedResponse<TaskPresenter>> {
+    const [tasks, total] = await this.buildQueryTasks(userId, filters);
+
+    return {
+      data: TaskMapper.toPresenterList(tasks),
+      meta: buildPaginationMeta({
+        total,
+        limit: filters.limit,
+        page: filters.page,
+      }),
+    };
+  }
+
+  private async buildQueryTasks(userId: string, filters: FindAllTasksDto) {
     const query = this.taskRepository
       .createQueryBuilder('task')
       .where('task.createdByUserId = :userId', { userId });
@@ -60,23 +74,20 @@ export class TasksService {
       });
     }
 
+    if (filters.search) {
+      query.andWhere('task.name ILIKE :name', {
+        name: `%${filters.search}%`,
+      });
+    }
+
     query
       .orderBy('task.priority', 'DESC')
       .addOrderBy('task.dueDate', 'ASC')
+      .addOrderBy('task.updated_at', 'DESC')
       .take(filters.limit)
       .skip((filters.page - 1) * filters.limit);
 
-    const [tasks, total] = await query.getManyAndCount();
-
-    return {
-      data: TaskMapper.toPresenterList(tasks),
-      meta: {
-        total,
-        totalPages: Math.ceil(total / filters.limit),
-        currentPage: filters.page,
-        limit: filters.limit,
-      },
-    };
+    return query.getManyAndCount();
   }
 
   async findOne({ userId, taskId }: TaskContext) {

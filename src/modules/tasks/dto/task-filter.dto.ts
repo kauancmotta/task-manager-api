@@ -1,6 +1,6 @@
 import { TaskPriority } from '@modules/tasks/enums/task-priority.enum';
 import { TaskStatus } from '@modules/tasks/enums/task-status.enum';
-import { IsDateString, IsEnum, IsOptional } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class TaskFilterDto {
   @IsEnum(TaskPriority)
@@ -18,4 +18,8 @@ export class TaskFilterDto {
   @IsOptional()
   @IsDateString()
   dueDateAfter?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

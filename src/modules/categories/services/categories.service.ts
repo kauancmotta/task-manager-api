@@ -10,6 +10,7 @@ import { Logger } from 'nestjs-pino';
 import { Category } from '@modules/categories/entities/categories.entity';
 import {
   CategoryContext,
+  CategoryContextFilters,
   CategoryContextWithCreateCategoryDto,
   CategoryContextWithUpdateCategoryDto,
   CategoryContextWithValidationName,
@@ -23,8 +24,30 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll(userId: string) {
-    return this.categoryRepository.find({ where: { createdByUserId: userId } });
+  async findAll({ userId, filters }: CategoryContextFilters) {
+    return this.buildQueryCategories({ userId, filters });
+  }
+
+  private async buildQueryCategories({
+    userId,
+    filters,
+  }: CategoryContextFilters) {
+    const query = this.categoryRepository
+      .createQueryBuilder('category')
+      .where('category.createdByUserId = :createdByUserId', {
+        createdByUserId: userId,
+      });
+
+    if (filters.search) {
+      query.andWhere('category.name ILIKE :name', {
+        name: `%${filters.search}%`,
+      });
+    }
+
+    return query
+      .orderBy('category.updated_at', 'DESC')
+      .addOrderBy('category.name', 'ASC')
+      .getMany();
   }
 
   async findOne({ userId, categoryId }: CategoryContext) {

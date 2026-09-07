@@ -19,7 +19,7 @@ export class Task extends BaseEntity {
   @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.TODO })
   status!: TaskStatus;
 
-  @Column({ type: 'enum', enum: TaskPriority, default: TaskPriority.LOW })
+  @Column({ type: 'int', default: TaskPriority.LOW })
   priority!: TaskPriority;
 
   @Column({ name: 'category_id', nullable: true })

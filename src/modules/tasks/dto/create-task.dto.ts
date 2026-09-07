@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MinDate,
 } from 'class-validator';
 
 export class CreateTaskDto {
@@ -28,6 +29,7 @@ export class CreateTaskDto {
 
   @IsDate()
   @IsOptional()
+  @MinDate(() => new Date(), { message: 'Due date must be in the future' })
   @Type(() => Date)
   dueDate?: Date;
 }
