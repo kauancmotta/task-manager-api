@@ -7,6 +7,7 @@ import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
 import { Exclude } from 'class-transformer';
 import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
 import { Category } from '@modules/categories/entities/categories.entity';
+import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -25,6 +26,15 @@ export class User extends BaseEntity {
 
   @Column({ name: 'google_id', nullable: true })
   googleId?: string;
+
+  @Column({ name: 'is_email_verified', default: false })
+  isEmailVerified!: boolean;
+
+  @OneToMany(
+    () => EmailVerification,
+    (emailVerification) => emailVerification.user,
+  )
+  emailVerifications!: EmailVerification[];
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   refreshTokens!: RefreshToken[];
