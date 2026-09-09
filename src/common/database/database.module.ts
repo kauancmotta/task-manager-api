@@ -9,6 +9,7 @@ import { Task } from '@modules/tasks/entities/task.entity';
 import { TaskAssignee } from '@modules/tasks/entities/task-assignee.entity';
 import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
 import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
+import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
         url: configService.get('DATABASE_URL', { infer: true }),
         entities: [
           RefreshToken,
+          EmailVerification,
           User,
           Category,
           Task,
