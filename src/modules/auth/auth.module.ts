@@ -13,11 +13,14 @@ import { RefreshTokensService } from '@modules/auth/services/refresh-tokens.serv
 import { UsersModule } from '@modules/users/users.module';
 import { JwtStrategy } from '@modules/auth/strategies/jwt.strategy';
 import { GoogleAuthModule } from '@modules/auth/google-auth.module';
+import { MailModule } from '@common/mail/mail.module';
+import { EmailVerificationsService } from '@modules/auth/services/email-verifications.service';
+import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
 
 const isGoogleOAuthEnabled = process.env.GOOGLE_OAUTH_ENABLED === 'true';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshToken, User]),
+    TypeOrmModule.forFeature([RefreshToken, User, EmailVerification]),
     JwtModule.registerAsync({
       global: true,
       imports: [ConfigModule],
@@ -32,8 +35,14 @@ const isGoogleOAuthEnabled = process.env.GOOGLE_OAUTH_ENABLED === 'true';
     ...(isGoogleOAuthEnabled ? [GoogleAuthModule] : []),
     ScheduleModule.forRoot(),
     UsersModule,
+    MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, RefreshTokensService, JwtStrategy],
+  providers: [
+    AuthService,
+    RefreshTokensService,
+    EmailVerificationsService,
+    JwtStrategy,
+  ],
 })
 export class AuthModule {}
