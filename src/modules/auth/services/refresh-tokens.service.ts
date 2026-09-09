@@ -10,11 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
-import {
-  calculateExpiresAt,
-  generateRefreshToken,
-  hashToken,
-} from '@common/utils';
+import { calculateExpiresAt, generateToken, hashToken } from '@common/utils';
 import { EnvConfig } from '@common/config/env.config';
 
 @Injectable()
@@ -31,7 +27,7 @@ export class RefreshTokensService {
       ? manager.getRepository(RefreshToken)
       : this.refreshTokenRepository;
 
-    const token = generateRefreshToken();
+    const token = generateToken();
     const hashedToken = hashToken(token);
 
     const refreshToken = refreshTokenRepo.create({

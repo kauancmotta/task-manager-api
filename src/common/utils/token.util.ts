@@ -1,6 +1,6 @@
 import * as Crypto from 'crypto';
 
-export function generateRefreshToken(): string {
+export function generateToken(): string {
   return Crypto.randomBytes(32).toString('hex');
 }
 

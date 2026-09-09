@@ -17,4 +17,8 @@ export interface EnvConfig {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_CALLBACK_URL: string;
+  MAIL_HOST: string;
+  MAIL_PORT: number;
+  MAIL_FROM: string;
+  MAIL_EXPIRES_IN: StringValue;
 }

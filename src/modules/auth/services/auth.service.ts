@@ -2,6 +2,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,17 +22,21 @@ import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@common/config/env.config';
 import { TOKEN_TYPE } from '@common/constants/auth.constants';
 import { GoogleProfile } from '@modules/auth/interfaces';
+import { EmailVerificationsService } from '@modules/auth/services/email-verifications.service';
+import { EmailVerificationTypes } from '@modules/auth/enums';
+import { MailTemplates } from '@common/mail/enums';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly configService: ConfigService<EnvConfig, true>,
     private readonly logger: Logger,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
     private readonly refreshTokensService: RefreshTokensService,
-    private readonly configService: ConfigService<EnvConfig, true>,
+    private readonly emailVerificationsService: EmailVerificationsService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -41,24 +46,48 @@ export class AuthService {
 
     const hash = await hashPassword(password);
 
-    return await this.dataSource.transaction(async (manager) => {
-      const user = this.userRepository.create({
-        email,
-        name,
-        password: hash,
-      });
-      await manager.save(User, user);
+    const [tokens, emailToken] = await this.dataSource.transaction(
+      async (manager) => {
+        const user = this.userRepository.create({
+          email,
+          name,
+          password: hash,
+        });
+        await manager.save(User, user);
 
-      const tokens = await this.generateAuthTokens(
-        user.id,
-        user.email,
-        manager,
-      );
+        const tokens = await this.generateAuthTokens(
+          user.id,
+          user.email,
+          manager,
+        );
 
-      this.logger.log(`User ID: ${user.id} registered successfully`);
+        this.logger.log(`User ID: ${user.id} registered successfully`);
 
-      return tokens;
+        const emailToken = await this.emailVerificationsService.create({
+          userId: user.id,
+          manager,
+        });
+
+        return [tokens, emailToken];
+      },
+    );
+
+    await this.emailVerificationsService.sendEmail({
+      to: email,
+      type: EmailVerificationTypes.EMAIL_VERIFICATION,
+      template: {
+        nameFileTemplate: MailTemplates.EMAIL_VERIFICATION,
+        variables: {
+          appUrl: this.configService.get('APP_URL', { infer: true }),
+          expiresIn: this.configService.get('MAIL_EXPIRES_IN', {
+            infer: true,
+          }),
+          token: emailToken,
+        },
+      },
     });
+
+    return tokens;
   }
 
   async login(loginDto: LoginDto) {
@@ -102,6 +131,35 @@ export class AuthService {
     }
 
     return this.generateAuthTokens(user.id, user.email);
+  }
+
+  async verifyEmail(token: string) {
+    const emailVerification =
+      await this.emailVerificationsService.validate(token);
+
+    await this.dataSource.transaction(async (manager) => {
+      const result = await manager.update(
+        User,
+        { id: emailVerification.userId },
+        { isEmailVerified: true },
+      );
+
+      if (!result.affected) {
+        throw new NotFoundException(
+          `User ${emailVerification.userId} not found`,
+        );
+      }
+
+      await this.emailVerificationsService.revoke({
+        userId: emailVerification.userId,
+        token,
+        manager,
+      });
+
+      this.logger.log(
+        `User ID: ${emailVerification.userId} email verified successfully`,
+      );
+    });
   }
 
   private async registerWithGoogle(googleProfile: GoogleProfile) {

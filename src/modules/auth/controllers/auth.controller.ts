@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import {
   LogoutDto,
   RefreshDto,
   RegisterDto,
+  VerifyEmailDto,
 } from '@modules/auth/dto';
 import { GoogleAuthGuard } from '@modules/auth/guards/google.auth.guard';
 import type { GoogleProfile, JwtPayload } from '@modules/auth/interfaces';
@@ -70,6 +72,13 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   googleCallback(@Request() req: AuthRequest<GoogleProfile>) {
     return this.authService.loginWithGoogle(req.user);
+  }
+
+  @Public()
+  @Get('/verify-email')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  verifyEmail(@Query() verifyEmailDto: VerifyEmailDto) {
+    return this.authService.verifyEmail(verifyEmailDto.token);
   }
 
   @Get('me')

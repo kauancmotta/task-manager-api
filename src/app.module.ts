@@ -9,12 +9,14 @@ import { UsersModule } from '@modules/users/users.module';
 import { TasksModule } from '@modules/tasks/tasks.module';
 import { StorageModule } from '@common/storage/storage.module';
 import { AuthModule } from '@modules/auth/auth.module';
+import { MailModule } from '@common/mail/mail.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
     AppLoggerModule,
     DatabaseModule,
     StorageModule,
+    MailModule,
     AuthModule,
     CategoriesModule,
     UsersModule,
