@@ -103,6 +103,23 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   GOOGLE_CALLBACK_URL?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MAIL_HOST!: string;
+
+  @IsNumber()
+  @Min(0)
+  @Max(65535)
+  MAIL_PORT!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  MAIL_FROM!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MAIL_EXPIRES_IN!: StringValue;
 }
 
 export function validate(config: Record<string, unknown>) {
