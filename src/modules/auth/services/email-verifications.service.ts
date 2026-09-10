@@ -8,13 +8,13 @@ import {
   EmailVerificationContextWithManager,
   EmailVerificationContextWithRevoke,
   EmailVerificationContextWithSendEmail,
+  EmailVerificationContextWithValidate,
 } from '@modules/auth/interfaces';
 import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
 import { EnvConfig } from '@common/config/env.config';
-import { calculateExpiresAt, generateToken, hashToken } from '@common/utils';
+import { calculateExpiresAt, hashToken } from '@common/utils';
 import { MailService } from '@common/mail/services/mail.service';
 import { EMAIL_VERIFICATION_TYPE_DICTIONARY } from '@modules/auth/constants/email-verification-type-dictionary.constant';
-import { EmailVerificationTypes } from '@modules/auth/enums';
 
 @Injectable()
 export class EmailVerificationsService {
@@ -26,18 +26,22 @@ export class EmailVerificationsService {
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
-  async create({ userId, manager }: EmailVerificationContextWithManager) {
+  async create({
+    userId,
+    type,
+    token,
+    manager,
+  }: EmailVerificationContextWithManager) {
     const emailVerificationRepo = manager
       ? manager.getRepository(EmailVerification)
       : this.emailVerificationRepository;
 
-    const token = generateToken();
     const hashedToken = hashToken(token);
 
     const emailVerification = emailVerificationRepo.create({
       userId,
       token: hashedToken,
-      type: EmailVerificationTypes.EMAIL_VERIFICATION,
+      type,
       expiresAt: calculateExpiresAt(
         this.configService.get('MAIL_EXPIRES_IN', {
           infer: true,
@@ -52,11 +56,11 @@ export class EmailVerificationsService {
     return token;
   }
 
-  async sendEmail({
+  async sendEmail<T>({
     to,
     type,
     template,
-  }: EmailVerificationContextWithSendEmail) {
+  }: EmailVerificationContextWithSendEmail<T>) {
     await this.mailService.sendMail({
       to,
       subject: EMAIL_VERIFICATION_TYPE_DICTIONARY[type],
@@ -64,24 +68,35 @@ export class EmailVerificationsService {
     });
   }
 
-  async validate(token: string) {
+  async validate({ token, type }: EmailVerificationContextWithValidate) {
     const hashedToken = hashToken(token);
 
-    const emailVerification = await this.emailVerificationRepository.findOne({
-      where: {
-        type: EmailVerificationTypes.EMAIL_VERIFICATION,
-        token: hashedToken,
-      },
-    });
+    const emailVerification = await this.emailVerificationRepository
+      .createQueryBuilder('emailVerification')
+      .innerJoin('emailVerification.user', 'user')
+      .addSelect(['user.id', 'user.email'])
+      .where('emailVerification.type = :type', { type })
+      .andWhere('emailVerification.token = :token', { token: hashedToken })
+      .getOne();
 
-    if (!emailVerification || emailVerification.expiresAt < new Date()) {
+    if (
+      !emailVerification ||
+      !emailVerification.user?.id ||
+      !emailVerification.user?.email ||
+      emailVerification.expiresAt < new Date()
+    ) {
       throw new NotFoundException('Email verification expires or not found');
     }
 
     return emailVerification;
   }
 
-  async revoke({ userId, token, manager }: EmailVerificationContextWithRevoke) {
+  async revoke({
+    userId,
+    token,
+    type,
+    manager,
+  }: EmailVerificationContextWithRevoke) {
     const emailVerificationRepo = manager
       ? manager.getRepository(EmailVerification)
       : this.emailVerificationRepository;
@@ -90,7 +105,7 @@ export class EmailVerificationsService {
 
     const result = await emailVerificationRepo.delete({
       userId,
-      type: EmailVerificationTypes.EMAIL_VERIFICATION,
+      type,
       token: hashedToken,
     });
 
