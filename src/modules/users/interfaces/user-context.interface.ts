@@ -1,4 +1,4 @@
-import { UpdateUserDto } from '@modules/users/dto';
+import { ChangePasswordDto, UpdateUserDto } from '@modules/users/dto';
 
 export interface UserContext {
   userId: string;
@@ -6,6 +6,10 @@ export interface UserContext {
 
 export type UserContextWithUpdateUserDto = UserContext & {
   updateUserDto: UpdateUserDto;
+};
+
+export type UserContextWithChangePasswordDto = UserContext & {
+  changePasswordDto: ChangePasswordDto;
 };
 
 export type UserContextWithAvatar = UserContext & {

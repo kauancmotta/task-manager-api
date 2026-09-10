@@ -13,7 +13,7 @@ import type { JwtPayload } from '@modules/auth/interfaces';
 import { UsersService } from '@modules/users/services/users.service';
 import { UploadedImage } from '@common/decorators/uploaded-image.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { UpdateUserDto } from '@modules/users/dto';
+import { ChangePasswordDto, UpdateUserDto } from '@modules/users/dto';
 
 @Controller('users')
 export class UsersController {
@@ -40,6 +40,17 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removeAvatar(@CurrentUser() user: JwtPayload) {
     return this.usersService.removeAvatar(user.sub);
+  }
+
+  @Patch('me/change-password')
+  changePassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword({
+      userId: user.sub,
+      changePasswordDto,
+    });
   }
 
   @Delete('/me')
