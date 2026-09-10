@@ -29,16 +29,16 @@ import { RefreshTokensService } from '@modules/auth/services/refresh-tokens.serv
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@common/config/env.config';
 import { TOKEN_TYPE } from '@common/constants/auth.constants';
-import {
-  EmailVerificationVariables,
-  GoogleProfile,
-  PasswordResetVariables,
-} from '@modules/auth/interfaces';
+import { GoogleProfile } from '@modules/auth/interfaces';
 import { EmailVerificationsService } from '@modules/auth/services/email-verifications.service';
 import { EmailVerificationTypes } from '@modules/auth/enums';
-import { MailTemplates } from '@common/mail/enums';
 import { MailService } from '@common/mail/services/mail.service';
-import { EMAIL_VERIFICATION_TYPE_DICTIONARY } from '@modules/auth/constants/email-verification-type-dictionary.constant';
+import {
+  buildEmailConfirmationMail,
+  buildEmailVerifiedMail,
+  buildPasswordChangedMail,
+  buildPasswordResetMail,
+} from '@common/mail/factories';
 
 @Injectable()
 export class AuthService {
@@ -80,7 +80,7 @@ export class AuthService {
 
         const emailToken = await this.emailVerificationsService.create({
           userId: user.id,
-          type: EmailVerificationTypes.EMAIL_VERIFICATION,
+          type: EmailVerificationTypes.EMAIL_CONFIRMATION,
           token: generateToken(),
           manager,
         });
@@ -89,11 +89,9 @@ export class AuthService {
       },
     );
 
-    await this.emailVerificationsService.sendEmail<EmailVerificationVariables>({
-      to: email,
-      type: EmailVerificationTypes.EMAIL_VERIFICATION,
-      template: {
-        nameFileTemplate: MailTemplates.EMAIL_VERIFICATION,
+    await this.mailService.sendMail(
+      buildEmailConfirmationMail({
+        to: email,
         variables: {
           appUrl: this.configService.get('APP_URL', { infer: true }),
           expiresIn: this.configService.get('MAIL_EXPIRES_IN', {
@@ -101,8 +99,8 @@ export class AuthService {
           }),
           token: emailToken,
         },
-      },
-    });
+      }),
+    );
 
     return tokens;
   }
@@ -152,7 +150,7 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const type = EmailVerificationTypes.EMAIL_VERIFICATION;
+    const type = EmailVerificationTypes.EMAIL_CONFIRMATION;
 
     const emailVerification = await this.emailVerificationsService.validate({
       token,
@@ -183,6 +181,15 @@ export class AuthService {
         `User ID: ${emailVerification.userId} email verified successfully`,
       );
     });
+
+    await this.mailService.sendMail(
+      buildEmailVerifiedMail({
+        to: emailVerification.user.email,
+        variables: {
+          appUrl: this.configService.get('APP_URL', { infer: true }),
+        },
+      }),
+    );
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
@@ -200,19 +207,17 @@ export class AuthService {
       type: EmailVerificationTypes.PASSWORD_RESET,
     });
 
-    await this.emailVerificationsService.sendEmail<PasswordResetVariables>({
-      to: forgotPasswordDto.email,
-      type: EmailVerificationTypes.PASSWORD_RESET,
-      template: {
-        nameFileTemplate: MailTemplates.PASSWORD_RESET,
+    await this.mailService.sendMail(
+      buildPasswordResetMail({
+        to: forgotPasswordDto.email,
         variables: {
           otp: token,
           expiresIn: this.configService.get('MAIL_EXPIRES_IN', {
             infer: true,
           }),
         },
-      },
-    });
+      }),
+    );
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -251,17 +256,14 @@ export class AuthService {
       );
     });
 
-    await this.mailService.sendMail({
-      to: emailVerification.user.email,
-      subject:
-        EMAIL_VERIFICATION_TYPE_DICTIONARY[
-          EmailVerificationTypes.PASSWORD_CHANGED
-        ],
-      template: {
-        nameFileTemplate: MailTemplates.PASSWORD_CHANGED,
-        variables: {},
-      },
-    });
+    await this.mailService.sendMail(
+      buildPasswordChangedMail({
+        to: emailVerification.user.email,
+        variables: {
+          appUrl: this.configService.get('APP_URL', { infer: true }),
+        },
+      }),
+    );
   }
 
   private async registerWithGoogle(googleProfile: GoogleProfile) {

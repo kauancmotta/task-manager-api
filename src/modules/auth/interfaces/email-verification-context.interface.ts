@@ -25,17 +25,6 @@ export type EmailVerificationContextWithRevoke = EmailVerificationContext & {
   manager?: EntityManager;
 };
 
-export interface EmailVerificationVariables {
-  appUrl: string;
-  token: string;
-  expiresIn: string;
-}
-
-export interface PasswordResetVariables {
-  otp: string;
-  expiresIn: string;
-}
-
 export type EmailVerificationContextWithSendEmail<T> = Omit<
   MailContext<T>,
   'subject'
