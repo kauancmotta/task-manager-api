@@ -1,20 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 import {
   EmailVerificationContextWithManager,
   EmailVerificationContextWithRevoke,
-  EmailVerificationContextWithSendEmail,
   EmailVerificationContextWithValidate,
 } from '@modules/auth/interfaces';
 import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
 import { EnvConfig } from '@common/config/env.config';
 import { calculateExpiresAt, hashToken } from '@common/utils';
-import { MailService } from '@common/mail/services/mail.service';
-import { EMAIL_VERIFICATION_TYPE_DICTIONARY } from '@modules/auth/constants/email-verification-type-dictionary.constant';
 
 @Injectable()
 export class EmailVerificationsService {
@@ -22,7 +20,6 @@ export class EmailVerificationsService {
     private readonly logger: Logger,
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepository: Repository<EmailVerification>,
-    private readonly mailService: MailService,
     private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
@@ -56,18 +53,6 @@ export class EmailVerificationsService {
     return token;
   }
 
-  async sendEmail<T>({
-    to,
-    type,
-    template,
-  }: EmailVerificationContextWithSendEmail<T>) {
-    await this.mailService.sendMail({
-      to,
-      subject: EMAIL_VERIFICATION_TYPE_DICTIONARY[type],
-      template,
-    });
-  }
-
   async validate({ token, type }: EmailVerificationContextWithValidate) {
     const hashedToken = hashToken(token);
 
@@ -77,15 +62,11 @@ export class EmailVerificationsService {
       .addSelect(['user.id', 'user.email'])
       .where('emailVerification.type = :type', { type })
       .andWhere('emailVerification.token = :token', { token: hashedToken })
+      .andWhere('emailVerification.expiresAt > :now', { now: new Date() })
       .getOne();
 
-    if (
-      !emailVerification ||
-      !emailVerification.user?.id ||
-      !emailVerification.user?.email ||
-      emailVerification.expiresAt < new Date()
-    ) {
-      throw new NotFoundException('Email verification expires or not found');
+    if (!emailVerification) {
+      throw new NotFoundException('Email verification expired or not found');
     }
 
     return emailVerification;
@@ -114,5 +95,14 @@ export class EmailVerificationsService {
     }
 
     this.logger.log(`Email verification revoked for User ID: ${userId}`);
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async cleanExpired() {
+    const result = await this.emailVerificationRepository.delete({
+      expiresAt: LessThan(new Date()),
+    });
+
+    this.logger.log(`Cleaned ${result.affected} expired email verifications`);
   }
 }

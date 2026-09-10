@@ -19,9 +19,9 @@ import {
 } from '@modules/users/interfaces';
 import { comparePassword, hashPassword } from '@common/utils';
 import { MailService } from '@common/mail/services/mail.service';
-import { EMAIL_VERIFICATION_TYPE_DICTIONARY } from '@modules/auth/constants/email-verification-type-dictionary.constant';
-import { EmailVerificationTypes } from '@modules/auth/enums';
-import { MailTemplates } from '@common/mail/enums';
+import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from '@common/config/env.config';
+import { buildPasswordChangedMail } from '@common/mail/factories';
 
 @Injectable()
 export class UsersService {
@@ -32,6 +32,7 @@ export class UsersService {
     @Inject('STORAGE_SERVICE')
     private readonly storageService: StorageService,
     private readonly mailService: MailService,
+    private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
   async findOne(id: string) {
@@ -124,17 +125,14 @@ export class UsersService {
 
     this.logger.log(`User ID: ${user.id} password updated successfully`);
 
-    await this.mailService.sendMail({
-      to: user.email,
-      subject:
-        EMAIL_VERIFICATION_TYPE_DICTIONARY[
-          EmailVerificationTypes.PASSWORD_CHANGED
-        ],
-      template: {
-        nameFileTemplate: MailTemplates.PASSWORD_CHANGED,
-        variables: {},
-      },
-    });
+    await this.mailService.sendMail(
+      buildPasswordChangedMail({
+        to: user.email,
+        variables: {
+          appUrl: this.configService.get('APP_URL', { infer: true }),
+        },
+      }),
+    );
   }
 
   async remove(id: string) {
