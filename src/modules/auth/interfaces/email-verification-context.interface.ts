@@ -5,10 +5,19 @@ import { MailContext } from '@common/mail/interfaces';
 
 export interface EmailVerificationContext {
   userId: string;
+  type: EmailVerificationTypes;
 }
 
 export type EmailVerificationContextWithManager = EmailVerificationContext & {
+  token: string;
   manager?: EntityManager;
+};
+
+export type EmailVerificationContextWithValidate = Omit<
+  EmailVerificationContext,
+  'userId'
+> & {
+  token: string;
 };
 
 export type EmailVerificationContextWithRevoke = EmailVerificationContext & {
@@ -16,14 +25,19 @@ export type EmailVerificationContextWithRevoke = EmailVerificationContext & {
   manager?: EntityManager;
 };
 
-export interface EmailVerificationVariable {
+export interface EmailVerificationVariables {
   appUrl: string;
   token: string;
   expiresIn: string;
 }
 
-export type EmailVerificationContextWithSendEmail = Omit<
-  MailContext<EmailVerificationVariable>,
+export interface PasswordResetVariables {
+  otp: string;
+  expiresIn: string;
+}
+
+export type EmailVerificationContextWithSendEmail<T> = Omit<
+  MailContext<T>,
   'subject'
 > & {
   type: EmailVerificationTypes;

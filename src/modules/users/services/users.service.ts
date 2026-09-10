@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,8 +14,14 @@ import { Logger } from 'nestjs-pino';
 import { StorageService } from '@common/storage/storage.interface';
 import {
   UserContextWithAvatar,
+  UserContextWithChangePasswordDto,
   UserContextWithUpdateUserDto,
 } from '@modules/users/interfaces';
+import { comparePassword, hashPassword } from '@common/utils';
+import { MailService } from '@common/mail/services/mail.service';
+import { EMAIL_VERIFICATION_TYPE_DICTIONARY } from '@modules/auth/constants/email-verification-type-dictionary.constant';
+import { EmailVerificationTypes } from '@modules/auth/enums';
+import { MailTemplates } from '@common/mail/enums';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +31,7 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @Inject('STORAGE_SERVICE')
     private readonly storageService: StorageService,
+    private readonly mailService: MailService,
   ) {}
 
   async findOne(id: string) {
@@ -87,6 +95,46 @@ export class UsersService {
     await this.userRepository.update(id, { avatarUrl: null });
 
     this.logger.log(`User ID: ${id} avatar removed successfully`);
+  }
+
+  async changePassword({
+    userId,
+    changePasswordDto,
+  }: UserContextWithChangePasswordDto) {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect(['user.id', 'user.email', 'user.password'])
+      .where('user.id = :id', { id: userId })
+      .getOne();
+
+    const isValid = await comparePassword(
+      changePasswordDto.password,
+      user?.password ?? '',
+    );
+
+    if (!user || !isValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const hashedPassword = await hashPassword(changePasswordDto.newPassword);
+
+    await this.userRepository.update(userId, {
+      password: hashedPassword,
+    });
+
+    this.logger.log(`User ID: ${user.id} password updated successfully`);
+
+    await this.mailService.sendMail({
+      to: user.email,
+      subject:
+        EMAIL_VERIFICATION_TYPE_DICTIONARY[
+          EmailVerificationTypes.PASSWORD_CHANGED
+        ],
+      template: {
+        nameFileTemplate: MailTemplates.PASSWORD_CHANGED,
+        variables: {},
+      },
+    });
   }
 
   async remove(id: string) {

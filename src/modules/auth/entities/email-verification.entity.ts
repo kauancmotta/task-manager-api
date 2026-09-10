@@ -1,10 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 
 import { BaseWithoutSoftDeleteEntity } from '@common/entities/base-without-soft-delete.entity';
 import { User } from '@modules/users/entities/user.entity';
 import { EmailVerificationTypes } from '@modules/auth/enums';
 
 @Entity('email_verifications')
+@Unique(['token'])
 export class EmailVerification extends BaseWithoutSoftDeleteEntity {
   @Column({ name: 'user_id' })
   userId!: string;
