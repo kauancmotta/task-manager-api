@@ -1,5 +1,6 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -13,18 +14,31 @@ import {
   hashPassword,
   comparePassword,
   calculateExpiresAt,
+  generateToken,
+  generateOTP,
 } from '@common/utils';
-import { LoginDto, RegisterDto } from '@modules/auth/dto';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from '@modules/auth/dto';
 import { JwtPayload } from '@modules/auth/interfaces/jwt-payload.interface';
 import { User } from '@modules/users/entities/user.entity';
 import { RefreshTokensService } from '@modules/auth/services/refresh-tokens.service';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@common/config/env.config';
 import { TOKEN_TYPE } from '@common/constants/auth.constants';
-import { GoogleProfile } from '@modules/auth/interfaces';
+import {
+  EmailVerificationVariables,
+  GoogleProfile,
+  PasswordResetVariables,
+} from '@modules/auth/interfaces';
 import { EmailVerificationsService } from '@modules/auth/services/email-verifications.service';
 import { EmailVerificationTypes } from '@modules/auth/enums';
 import { MailTemplates } from '@common/mail/enums';
+import { MailService } from '@common/mail/services/mail.service';
+import { EMAIL_VERIFICATION_TYPE_DICTIONARY } from '@modules/auth/constants/email-verification-type-dictionary.constant';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +51,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly refreshTokensService: RefreshTokensService,
     private readonly emailVerificationsService: EmailVerificationsService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -65,6 +80,8 @@ export class AuthService {
 
         const emailToken = await this.emailVerificationsService.create({
           userId: user.id,
+          type: EmailVerificationTypes.EMAIL_VERIFICATION,
+          token: generateToken(),
           manager,
         });
 
@@ -72,7 +89,7 @@ export class AuthService {
       },
     );
 
-    await this.emailVerificationsService.sendEmail({
+    await this.emailVerificationsService.sendEmail<EmailVerificationVariables>({
       to: email,
       type: EmailVerificationTypes.EMAIL_VERIFICATION,
       template: {
@@ -125,6 +142,7 @@ export class AuthService {
       await this.userRepository.update(user.id, {
         googleId: googleProfile.googleId,
         avatarUrl: googleProfile.avatarUrl,
+        isEmailVerified: true,
       });
 
       this.logger.log(`User ID: ${user.id} Google account linked successfully`);
@@ -134,8 +152,12 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const emailVerification =
-      await this.emailVerificationsService.validate(token);
+    const type = EmailVerificationTypes.EMAIL_VERIFICATION;
+
+    const emailVerification = await this.emailVerificationsService.validate({
+      token,
+      type,
+    });
 
     await this.dataSource.transaction(async (manager) => {
       const result = await manager.update(
@@ -153,12 +175,92 @@ export class AuthService {
       await this.emailVerificationsService.revoke({
         userId: emailVerification.userId,
         token,
+        type,
         manager,
       });
 
       this.logger.log(
         `User ID: ${emailVerification.userId} email verified successfully`,
       );
+    });
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const user = await this.findUserByEmail(forgotPasswordDto.email);
+
+    if (!user) return;
+
+    if (!user.isEmailVerified) {
+      throw new BadRequestException('Email not verified');
+    }
+
+    const token = await this.emailVerificationsService.create({
+      userId: user.id,
+      token: generateOTP(),
+      type: EmailVerificationTypes.PASSWORD_RESET,
+    });
+
+    await this.emailVerificationsService.sendEmail<PasswordResetVariables>({
+      to: forgotPasswordDto.email,
+      type: EmailVerificationTypes.PASSWORD_RESET,
+      template: {
+        nameFileTemplate: MailTemplates.PASSWORD_RESET,
+        variables: {
+          otp: token,
+          expiresIn: this.configService.get('MAIL_EXPIRES_IN', {
+            infer: true,
+          }),
+        },
+      },
+    });
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const type = EmailVerificationTypes.PASSWORD_RESET;
+    const token = resetPasswordDto.otp;
+
+    const emailVerification = await this.emailVerificationsService.validate({
+      token,
+      type,
+    });
+
+    const hashedPassword = await hashPassword(resetPasswordDto.newPassword);
+
+    await this.dataSource.transaction(async (manager) => {
+      const result = await manager.update(
+        User,
+        { id: emailVerification.userId },
+        { password: hashedPassword },
+      );
+
+      if (!result.affected) {
+        throw new NotFoundException(
+          `User ${emailVerification.userId} not found`,
+        );
+      }
+
+      await this.emailVerificationsService.revoke({
+        userId: emailVerification.userId,
+        token,
+        type,
+        manager,
+      });
+
+      this.logger.log(
+        `User ID: ${emailVerification.userId} password reset successfully`,
+      );
+    });
+
+    await this.mailService.sendMail({
+      to: emailVerification.user.email,
+      subject:
+        EMAIL_VERIFICATION_TYPE_DICTIONARY[
+          EmailVerificationTypes.PASSWORD_CHANGED
+        ],
+      template: {
+        nameFileTemplate: MailTemplates.PASSWORD_CHANGED,
+        variables: {},
+      },
     });
   }
 
@@ -169,6 +271,7 @@ export class AuthService {
         name: googleProfile.name,
         googleId: googleProfile.googleId,
         avatarUrl: googleProfile.avatarUrl,
+        isEmailVerified: true,
       });
       await manager.save(User, user);
 
@@ -190,6 +293,13 @@ export class AuthService {
     if (exists) {
       throw new ConflictException(`Email "${email}" already exists`);
     }
+  }
+
+  private async findUserByEmail(email: string) {
+    return this.userRepository.findOne({
+      where: { email },
+      select: { id: true, isEmailVerified: true },
+    });
   }
 
   private async generateAuthTokens(

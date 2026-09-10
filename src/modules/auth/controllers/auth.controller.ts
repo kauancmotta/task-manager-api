@@ -15,10 +15,12 @@ import { RefreshTokensService } from '@modules/auth/services/refresh-tokens.serv
 import { UsersService } from '@modules/users/services/users.service';
 import type { AuthRequest } from '@common/interfaces';
 import {
+  ForgotPasswordDto,
   LoginDto,
   LogoutDto,
   RefreshDto,
   RegisterDto,
+  ResetPasswordDto,
   VerifyEmailDto,
 } from '@modules/auth/dto';
 import { GoogleAuthGuard } from '@modules/auth/guards/google.auth.guard';
@@ -79,6 +81,20 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   verifyEmail(@Query() verifyEmailDto: VerifyEmailDto) {
     return this.authService.verifyEmail(verifyEmailDto.token);
+  }
+
+  @Public()
+  @Post('/forget-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Public()
+  @Post('/reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Get('me')
