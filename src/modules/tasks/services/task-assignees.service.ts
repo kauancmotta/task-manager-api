@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 
@@ -9,6 +9,8 @@ import {
   TaskContext,
   TaskContextWithAssigneeId,
 } from '@modules/tasks/interfaces';
+import { AppException } from '@common/exceptions/app.exception';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
 @Injectable()
 export class TaskAssigneesService {
   constructor(
@@ -29,7 +31,11 @@ export class TaskAssigneesService {
     });
 
     if (!taskAssignee) {
-      throw new NotFoundException(`Task Assignee ${assigneeId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_ASSIGNEE_NOT_FOUND,
+        'Task Assignee not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return taskAssignee;
@@ -59,7 +65,11 @@ export class TaskAssigneesService {
     });
 
     if (!result.affected) {
-      throw new NotFoundException(`Task Assignee ${assigneeId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_ASSIGNEE_NOT_FOUND,
+        'Task Assignee not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`Task Assignee ID: ${assigneeId} deleted successfully`);
@@ -71,7 +81,11 @@ export class TaskAssigneesService {
     });
 
     if (!exists) {
-      throw new NotFoundException(`Task ${taskId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_NOT_FOUND,
+        'Task not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 }
