@@ -1,11 +1,5 @@
 import { DataSource, EntityManager, Repository } from 'typeorm';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Logger } from 'nestjs-pino';
@@ -39,6 +33,8 @@ import {
   buildPasswordChangedMail,
   buildPasswordResetMail,
 } from '@common/mail/factories';
+import { AppException } from '@common/exceptions/app.exception';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
 
 @Injectable()
 export class AuthService {
@@ -117,7 +113,11 @@ export class AuthService {
     const isValid = await comparePassword(password, user?.password ?? '');
 
     if (!user || !isValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        'Invalid credentials',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     return this.generateAuthTokens(user.id, user.email);
@@ -165,8 +165,10 @@ export class AuthService {
       );
 
       if (!result.affected) {
-        throw new NotFoundException(
-          `User ${emailVerification.userId} not found`,
+        throw new AppException(
+          ErrorCodes.USER_NOT_FOUND,
+          'User not found',
+          HttpStatus.NOT_FOUND,
         );
       }
 
@@ -198,7 +200,11 @@ export class AuthService {
     if (!user) return;
 
     if (!user.isEmailVerified) {
-      throw new BadRequestException('Email not verified');
+      throw new AppException(
+        ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
+        'Email not verified',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const token = await this.emailVerificationsService.create({
@@ -239,8 +245,10 @@ export class AuthService {
       );
 
       if (!result.affected) {
-        throw new NotFoundException(
-          `User ${emailVerification.userId} not found`,
+        throw new AppException(
+          ErrorCodes.USER_NOT_FOUND,
+          'User not found',
+          HttpStatus.NOT_FOUND,
         );
       }
 
@@ -293,7 +301,11 @@ export class AuthService {
     const exists = await this.userRepository.exists({ where: { email } });
 
     if (exists) {
-      throw new ConflictException(`Email "${email}" already exists`);
+      throw new AppException(
+        ErrorCodes.AUTH_EMAIL_ALREADY_EXISTS,
+        'Email already exists',
+        HttpStatus.CONFLICT,
+      );
     }
   }
 

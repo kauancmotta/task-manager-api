@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
 import { EntityManager, LessThan, Repository } from 'typeorm';
@@ -12,6 +8,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
 import { calculateExpiresAt, generateToken, hashToken } from '@common/utils';
 import { EnvConfig } from '@common/config/env.config';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
+import { AppException } from '@common/exceptions/app.exception';
 
 @Injectable()
 export class RefreshTokensService {
@@ -57,7 +55,11 @@ export class RefreshTokensService {
     });
 
     if (!refresh || refresh.expiresAt < new Date()) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new AppException(
+        ErrorCodes.AUTH_INVALID_REFRESH_TOKEN,
+        'Invalid refresh token',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     return refresh;
@@ -79,7 +81,11 @@ export class RefreshTokensService {
     });
 
     if (!result.affected) {
-      throw new NotFoundException('Refresh Token not found');
+      throw new AppException(
+        ErrorCodes.AUTH_INVALID_REFRESH_TOKEN,
+        'Invalid refresh token',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     this.logger.log(`Refresh Token: ${refreshToken} removed successfully`);
