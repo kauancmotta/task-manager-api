@@ -1,6 +1,8 @@
+import { ErrorCodes } from '@common/enums/error-codes.enum';
+import { AppException } from '@common/exceptions/app.exception';
 import {
-  BadRequestException,
   FileTypeValidator,
+  HttpStatus,
   MaxFileSizeValidator,
   ParseFilePipe,
   UploadedFile,
@@ -13,11 +15,32 @@ export const UploadedImage = (keyNameFile: string) =>
         new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
         new FileTypeValidator({
           fileType: /image\/(jpeg|png|webp)/,
-          errorMessage: 'A imagem deve ser no formato: .jpeg, .png, .webp',
+          errorMessage: 'FILE_INVALID_TYPE',
         }),
       ],
       fileIsRequired: true,
-      exceptionFactory: (error) =>
-        new BadRequestException(error.toString().replace('File', keyNameFile)),
+      exceptionFactory: (error) => {
+        if (error.includes('FILE_INVALID_TYPE')) {
+          return new AppException(
+            ErrorCodes.FILE_INVALID_TYPE,
+            'File must be in format: .jpeg, .png, .webp',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        if (error.includes('too large')) {
+          return new AppException(
+            ErrorCodes.FILE_TOO_LARGE,
+            'File size must be less than 5MB',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        return new AppException(
+          ErrorCodes.FILE_REQUIRED,
+          `${keyNameFile} is required and must be sent as multipart/form-data`,
+          HttpStatus.BAD_REQUEST,
+        );
+      },
     }),
   );

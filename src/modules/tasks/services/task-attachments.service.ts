@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Logger } from 'nestjs-pino';
@@ -11,6 +11,8 @@ import {
   TaskContextWithAttachmentId,
   TaskContextWithFile,
 } from '@modules/tasks/interfaces';
+import { AppException } from '@common/exceptions/app.exception';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
 
 @Injectable()
 export class TaskAttachmentsService {
@@ -59,7 +61,11 @@ export class TaskAttachmentsService {
     });
 
     if (!attachment) {
-      throw new NotFoundException(`Task Attachment ${attachmentId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_ATTACHMENT_NOT_FOUND,
+        'Task Attachment not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     await this.storageService.delete(attachment.fileUrl);
@@ -76,7 +82,11 @@ export class TaskAttachmentsService {
     const exists = await this.taskRepository.existsBy({ id: taskId });
 
     if (!exists) {
-      throw new NotFoundException(`Task ${taskId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_ATTACHMENT_NOT_FOUND,
+        'Task Attachment not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 }

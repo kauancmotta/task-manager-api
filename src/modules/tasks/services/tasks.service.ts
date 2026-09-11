@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { In, Repository } from 'typeorm';
 import { Logger } from 'nestjs-pino';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +18,8 @@ import {
 import { PaginatedResponse } from '@common/interfaces';
 import { FindAllTasksDto } from '@modules/tasks/dto';
 import { buildPaginationMeta } from '@common/utils';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
+import { AppException } from '@common/exceptions/app.exception';
 
 @Injectable()
 export class TasksService {
@@ -106,7 +104,11 @@ export class TasksService {
     });
 
     if (!task) {
-      throw new NotFoundException(`Task ID: ${taskId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_NOT_FOUND,
+        'Task not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return TaskMapper.toPresenter(task);
@@ -141,7 +143,11 @@ export class TasksService {
     );
 
     if (!result.affected) {
-      throw new NotFoundException(`Task ${taskId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_NOT_FOUND,
+        'Task not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`Task ID: ${taskId} updated successfully`);
@@ -180,8 +186,10 @@ export class TasksService {
     const task = await this.findOne({ userId, taskId });
 
     if (!this.isValidTransition(task.status, updateTaskStatusDto.status)) {
-      throw new BadRequestException(
+      throw new AppException(
+        ErrorCodes.TASK_NOT_FOUND,
         `Cannot transition from "${task.status}" to "${updateTaskStatusDto.status}"`,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -203,7 +211,11 @@ export class TasksService {
     });
 
     if (!result.affected) {
-      throw new NotFoundException(`Task ${taskId} not found`);
+      throw new AppException(
+        ErrorCodes.TASK_NOT_FOUND,
+        'Task not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`Task ID: ${taskId} deleted successfully`);
@@ -234,7 +246,11 @@ export class TasksService {
     });
 
     if (categories.length !== categoryIds.length) {
-      throw new NotFoundException('One or more categories not found');
+      throw new AppException(
+        ErrorCodes.TASK_INVALID_CATEGORY,
+        'One or more categories not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return categories;
@@ -259,11 +275,19 @@ export class TasksService {
       .getRawOne<{ total: string; hasCategory: string }>();
 
     if (!Number(result?.hasCategory)) {
-      throw new BadRequestException('No category was found for this task');
+      throw new AppException(
+        ErrorCodes.TASK_CATEGORY_NOT_FOUND,
+        'No category was found for this task',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     if (Number(result?.total) <= 1) {
-      throw new BadRequestException('Task must have at least one category');
+      throw new AppException(
+        ErrorCodes.TASK_MINIMUM_ONE_CATEGORY,
+        'Task must have at least one category',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 

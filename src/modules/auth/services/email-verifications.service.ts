@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'nestjs-pino';
@@ -13,6 +13,8 @@ import {
 import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
 import { EnvConfig } from '@common/config/env.config';
 import { calculateExpiresAt, hashToken } from '@common/utils';
+import { AppException } from '@common/exceptions/app.exception';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
 
 @Injectable()
 export class EmailVerificationsService {
@@ -66,7 +68,11 @@ export class EmailVerificationsService {
       .getOne();
 
     if (!emailVerification) {
-      throw new NotFoundException('Email verification expired or not found');
+      throw new AppException(
+        ErrorCodes.EMAIL_VERIFICATION_INVALID,
+        'Email verification expired or not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return emailVerification;
@@ -91,7 +97,11 @@ export class EmailVerificationsService {
     });
 
     if (!result.affected) {
-      throw new NotFoundException('Email verification not found');
+      throw new AppException(
+        ErrorCodes.EMAIL_VERIFICATION_INVALID,
+        'Email verification expired or not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`Email verification revoked for User ID: ${userId}`);

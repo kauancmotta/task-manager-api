@@ -1,10 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -22,6 +16,8 @@ import { MailService } from '@common/mail/services/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { EnvConfig } from '@common/config/env.config';
 import { buildPasswordChangedMail } from '@common/mail/factories';
+import { AppException } from '@common/exceptions/app.exception';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
 
 @Injectable()
 export class UsersService {
@@ -39,7 +35,11 @@ export class UsersService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException(`User ${id} not found`);
+      throw new AppException(
+        ErrorCodes.USER_NOT_FOUND,
+        'User not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return user;
@@ -60,7 +60,11 @@ export class UsersService {
     const result = await this.userRepository.update(userId, updateUserDto);
 
     if (!result.affected) {
-      throw new NotFoundException(`User ${userId} not found`);
+      throw new AppException(
+        ErrorCodes.USER_NOT_FOUND,
+        'User not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`User ID: ${userId} updated successfully`);
@@ -88,7 +92,11 @@ export class UsersService {
     const user = await this.findOne(id);
 
     if (!user.avatarUrl) {
-      throw new NotFoundException(`User ID: ${id} avatar not found`);
+      throw new AppException(
+        ErrorCodes.USER_AVATAR_NOT_FOUND,
+        'User avatar not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     await this.storageService.delete(user.avatarUrl);
@@ -108,13 +116,25 @@ export class UsersService {
       .where('user.id = :id', { id: userId })
       .getOne();
 
+    if (!user) {
+      throw new AppException(
+        ErrorCodes.USER_INVALID_PASSWORD,
+        'Invalid credentials',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     const isValid = await comparePassword(
       changePasswordDto.password,
-      user?.password ?? '',
+      user.password ?? '',
     );
 
-    if (!user || !isValid) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!isValid) {
+      throw new AppException(
+        ErrorCodes.USER_INVALID_PASSWORD,
+        'Invalid credentials',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const hashedPassword = await hashPassword(changePasswordDto.newPassword);
@@ -139,7 +159,11 @@ export class UsersService {
     const result = await this.userRepository.softDelete({ id });
 
     if (!result.affected) {
-      throw new NotFoundException(`User ${id} not found`);
+      throw new AppException(
+        ErrorCodes.USER_NOT_FOUND,
+        'User not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`User ID: ${id} deleted successfully`);
@@ -149,7 +173,11 @@ export class UsersService {
     const exists = await this.userRepository.exists({ where: { email } });
 
     if (exists) {
-      throw new ConflictException(`Email "${email}" already exists`);
+      throw new AppException(
+        ErrorCodes.AUTH_EMAIL_ALREADY_EXISTS,
+        'Email already exists',
+        HttpStatus.CONFLICT,
+      );
     }
   }
 }

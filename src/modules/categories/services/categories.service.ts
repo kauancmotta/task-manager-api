@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { Logger } from 'nestjs-pino';
@@ -15,6 +11,8 @@ import {
   CategoryContextWithUpdateCategoryDto,
   CategoryContextWithValidationName,
 } from '@modules/categories/interfaces';
+import { AppException } from '@common/exceptions/app.exception';
+import { ErrorCodes } from '@common/enums/error-codes.enum';
 
 @Injectable()
 export class CategoriesService {
@@ -56,7 +54,11 @@ export class CategoriesService {
     });
 
     if (!category) {
-      throw new NotFoundException('category not found');
+      throw new AppException(
+        ErrorCodes.CATEGORY_NOT_FOUND,
+        'Category not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return category;
@@ -98,7 +100,11 @@ export class CategoriesService {
     );
 
     if (!result.affected) {
-      throw new NotFoundException(`Category ${categoryId} not found`);
+      throw new AppException(
+        ErrorCodes.CATEGORY_NOT_FOUND,
+        'Category not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`Category ID: ${categoryId} updated successfully`);
@@ -113,7 +119,11 @@ export class CategoriesService {
     });
 
     if (!result.affected) {
-      throw new NotFoundException(`Category ${categoryId} not found`);
+      throw new AppException(
+        ErrorCodes.CATEGORY_NOT_FOUND,
+        'Category not found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`Category ID: ${categoryId} removed successfully`);
@@ -131,7 +141,11 @@ export class CategoriesService {
     });
 
     if (exists) {
-      throw new ConflictException(`Category "${name}" already exists`);
+      throw new AppException(
+        ErrorCodes.CATEGORY_NAME_ALREADY_EXISTS,
+        'Category already exists',
+        HttpStatus.CONFLICT,
+      );
     }
   }
 }
