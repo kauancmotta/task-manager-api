@@ -24,6 +24,7 @@ export class User extends BaseEntity {
   @Column({ nullable: true, select: false })
   password?: string;
 
+  @Exclude()
   @Column({ name: 'google_id', nullable: true })
   googleId?: string;
 
