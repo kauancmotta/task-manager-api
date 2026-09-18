@@ -1,6 +1,13 @@
-import { CreateUserDto } from '@modules/users/dto/create-user.dto';
-import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-export class UpdateUserDto extends PartialType(
-  OmitType(CreateUserDto, ['email'] as const),
-) {}
+import { Trim } from '@common/decorators/trim.decorator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class UpdateUserDto {
+  @ApiProperty({ example: 'Georgia C. Rice' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  @Trim()
+  name!: string;
+}

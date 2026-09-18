@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from '@modules/tasks/entities/task.entity';
 import { Category } from '@modules/categories/entities/categories.entity';
 import { TaskStatus } from '@modules/tasks/enums/task-status.enum';
-import { TaskMapper, TaskPresenter } from '@modules/tasks/mappers/task.mapper';
+import { TaskMapper } from '@modules/tasks/mappers/task.mapper';
 import {
   TaskContext,
   TaskContextWithCreateTaskDto,
@@ -20,6 +20,7 @@ import { FindAllTasksDto } from '@modules/tasks/dto';
 import { buildPaginationMeta } from '@common/utils';
 import { ErrorCodes } from '@common/enums/error-codes.enum';
 import { AppException } from '@common/exceptions/app.exception';
+import { TaskPresenter } from '@modules/tasks/presenters';
 
 @Injectable()
 export class TasksService {
@@ -187,7 +188,7 @@ export class TasksService {
 
     if (!this.isValidTransition(task.status, updateTaskStatusDto.status)) {
       throw new AppException(
-        ErrorCodes.TASK_NOT_FOUND,
+        ErrorCodes.TASK_INVALID_STATUS_TRANSITION,
         `Cannot transition from "${task.status}" to "${updateTaskStatusDto.status}"`,
         HttpStatus.BAD_REQUEST,
       );

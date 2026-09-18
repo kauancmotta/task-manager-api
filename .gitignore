@@ -63,3 +63,7 @@ tsconfig.build.tsbuildinfo
 
 # Uploads Multer
 uploads/
+
+# MailLog and PostgreSQL Data
+mail_log_data
+postgres_data

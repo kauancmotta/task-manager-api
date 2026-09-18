@@ -9,6 +9,8 @@ import { TypeOrmExceptionFilter } from '@common/filters/typeorm-exception.filter
 import { AllExceptionsFilter } from '@common/filters/http-exception.filter';
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { AppValidationPipe } from '@common/pipes/validation.pipe';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ClassSerializerInterceptor } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -21,12 +23,25 @@ async function bootstrap() {
   app.enableCors();
   app.useGlobalPipes(new AppValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter(), new TypeOrmExceptionFilter());
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   if (process.env.NODE_ENV !== 'production') {
     app.useStaticAssets(join(process.cwd(), 'uploads'), {
       prefix: '/uploads',
     });
   }
+
+  const config = new DocumentBuilder()
+    .setTitle('Task Manager API')
+    .setDescription(
+      'REST API for task management with authentication, categories and file uploads',
+    )
+    .setVersion('1.4.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
 }

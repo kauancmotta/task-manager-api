@@ -59,9 +59,9 @@ export class TaskAssigneesService {
 
   async remove({ userId, taskId, assigneeId }: TaskContextWithAssigneeId) {
     const result = await this.taskAssigneeRepository.softDelete({
+      id: assigneeId,
       userId,
       taskId,
-      id: assigneeId,
     });
 
     if (!result.affected) {

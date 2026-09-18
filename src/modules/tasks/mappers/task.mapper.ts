@@ -1,8 +1,5 @@
 import { Task } from '@modules/tasks/entities/task.entity';
-
-export type TaskPresenter = Omit<Task, 'generateId'> & {
-  overdue: boolean;
-};
+import { TaskPresenter } from '@modules/tasks/presenters';
 
 export class TaskMapper {
   static toPresenter = (task: Task): TaskPresenter => ({

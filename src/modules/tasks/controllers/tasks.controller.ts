@@ -9,6 +9,7 @@ import {
   HttpCode,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
 import { UuidParam } from '@common/decorators/uuid-param.decorator';
 import { TasksService } from '@modules/tasks/services/tasks.service';
@@ -21,21 +22,35 @@ import {
 } from '@modules/tasks/dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import type { JwtPayload } from '@modules/auth/interfaces';
+import {
+  SwaggerTaskCreateDoc,
+  SwaggerTaskFindAllDoc,
+  SwaggerTaskFindOneDoc,
+  SwaggerTaskRemoveCategoryDoc,
+  SwaggerTaskRemoveDoc,
+  SwaggerTaskUpdateCategoryDoc,
+  SwaggerTaskUpdateDoc,
+  SwaggerTaskUpdateStatusDoc,
+} from '@modules/tasks/swagger';
 
+@ApiTags('Tasks')
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
+  @SwaggerTaskFindAllDoc()
   @Get()
   findAll(@CurrentUser() user: JwtPayload, @Query() filters: FindAllTasksDto) {
     return this.tasksService.findAll(user.sub, filters);
   }
 
+  @SwaggerTaskFindOneDoc()
   @Get(':id')
   findOne(@CurrentUser() user: JwtPayload, @UuidParam('id') taskId: string) {
     return this.tasksService.findOne({ userId: user.sub, taskId });
   }
 
+  @SwaggerTaskCreateDoc()
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(
@@ -45,7 +60,9 @@ export class TasksController {
     return this.tasksService.create({ userId: user.sub, createTaskDto });
   }
 
+  @SwaggerTaskUpdateDoc()
   @Patch(':id')
+  @HttpCode(HttpStatus.OK)
   update(
     @CurrentUser() user: JwtPayload,
     @UuidParam('id') taskId: string,
@@ -58,7 +75,9 @@ export class TasksController {
     });
   }
 
+  @SwaggerTaskUpdateCategoryDoc()
   @Patch(':id/categories')
+  @HttpCode(HttpStatus.OK)
   updateCategories(
     @CurrentUser() user: JwtPayload,
     @UuidParam('id') taskId: string,
@@ -71,7 +90,9 @@ export class TasksController {
     });
   }
 
+  @SwaggerTaskUpdateStatusDoc()
   @Patch(':id/status')
+  @HttpCode(HttpStatus.OK)
   updateStatus(
     @CurrentUser() user: JwtPayload,
     @UuidParam('id') taskId: string,
@@ -84,12 +105,14 @@ export class TasksController {
     });
   }
 
+  @SwaggerTaskRemoveDoc()
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@CurrentUser() user: JwtPayload, @UuidParam('id') taskId: string) {
     return this.tasksService.remove({ userId: user.sub, taskId });
   }
 
+  @SwaggerTaskRemoveCategoryDoc()
   @Delete(':id/:categoryId/category')
   @HttpCode(HttpStatus.NO_CONTENT)
   removeTaskCategory(

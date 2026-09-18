@@ -5,12 +5,20 @@ services:
       POSTGRES_DB: taskDB
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "TaskManagerDevelopment"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql
     networks:
       - db
     ports:
       - "5432:5432"
   mailhog:
     image: mailhog/mailhog
+    user: root
+    environment:
+      - MH_STORAGE=maildir
+      - MH_MAILDIR_PATH=/maildir
+    volumes:
+      - ./mail_log_data:/maildir
     ports:
       - "1025:1025" # SMTP
       - "8025:8025" # Interface web

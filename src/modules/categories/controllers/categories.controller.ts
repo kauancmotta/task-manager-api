@@ -9,6 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
 import type { JwtPayload } from '@modules/auth/interfaces';
 import { CategoriesService } from '@modules/categories/services/categories.service';
@@ -19,11 +20,20 @@ import {
   UpdateCategoryDto,
 } from '@modules/categories/dto';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import {
+  SwaggerCategoryCreateDoc,
+  SwaggerCategoryFindAllDoc,
+  SwaggerCategoryFindOneDoc,
+  SwaggerCategoryRemoveDoc,
+  SwaggerCategoryUpdateDoc,
+} from '@modules/categories/swagger';
 
+@ApiTags('Categories')
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
+  @SwaggerCategoryFindAllDoc()
   @Get()
   findAll(
     @CurrentUser() user: JwtPayload,
@@ -32,6 +42,7 @@ export class CategoriesController {
     return this.categoriesService.findAll({ userId: user.sub, filters });
   }
 
+  @SwaggerCategoryFindOneDoc()
   @Get(':id')
   findOne(
     @CurrentUser() user: JwtPayload,
@@ -40,6 +51,7 @@ export class CategoriesController {
     return this.categoriesService.findOne({ userId: user.sub, categoryId });
   }
 
+  @SwaggerCategoryCreateDoc()
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(
@@ -52,7 +64,9 @@ export class CategoriesController {
     });
   }
 
+  @SwaggerCategoryUpdateDoc()
   @Patch(':id')
+  @HttpCode(HttpStatus.OK)
   update(
     @CurrentUser() user: JwtPayload,
     @UuidParam('id') categoryId: string,
@@ -65,6 +79,7 @@ export class CategoriesController {
     });
   }
 
+  @SwaggerCategoryRemoveDoc()
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@CurrentUser() user: JwtPayload, @UuidParam('id') categoryId: string) {

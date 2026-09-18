@@ -1,5 +1,6 @@
 import { ErrorCodes } from '@common/enums/error-codes.enum';
 import { AppException } from '@common/exceptions/app.exception';
+import { GoogleProfile } from '@modules/auth/interfaces';
 import { ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -15,5 +16,16 @@ export class GoogleAuthGuard extends AuthGuard('google') {
     }
 
     return super.canActivate(context);
+  }
+
+  handleRequest<TUser = GoogleProfile>(err: Error, user: TUser): TUser {
+    if (err || !user) {
+      throw new AppException(
+        ErrorCodes.AUTH_GOOGLE_OAUTH_FAILED,
+        'Google authentication failed',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    return user;
   }
 }
