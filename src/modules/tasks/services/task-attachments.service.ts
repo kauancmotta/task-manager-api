@@ -57,7 +57,7 @@ export class TaskAttachmentsService {
 
   async remove({ userId, taskId, attachmentId }: TaskContextWithAttachmentId) {
     const attachment = await this.taskAttachmentRepository.findOne({
-      where: { taskId, uploadedByUserId: userId, id: attachmentId },
+      where: { id: attachmentId, taskId, uploadedByUserId: userId },
     });
 
     if (!attachment) {
@@ -83,8 +83,8 @@ export class TaskAttachmentsService {
 
     if (!exists) {
       throw new AppException(
-        ErrorCodes.TASK_ATTACHMENT_NOT_FOUND,
-        'Task Attachment not found',
+        ErrorCodes.TASK_NOT_FOUND,
+        'Task not found',
         HttpStatus.NOT_FOUND,
       );
     }
