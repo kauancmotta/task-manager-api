@@ -23,7 +23,7 @@ export const UploadedImage = (keyNameFile: string) =>
         if (error.includes('FILE_INVALID_TYPE')) {
           return new AppException(
             ErrorCodes.FILE_INVALID_TYPE,
-            'File must be in format: .jpeg, .png, .webp',
+            `${keyNameFile} must be in format: .jpeg, .png, .webp`,
             HttpStatus.BAD_REQUEST,
           );
         }
@@ -31,7 +31,7 @@ export const UploadedImage = (keyNameFile: string) =>
         if (error.includes('too large')) {
           return new AppException(
             ErrorCodes.FILE_TOO_LARGE,
-            'File size must be less than 5MB',
+            `${keyNameFile} size must be less than 5MB`,
             HttpStatus.BAD_REQUEST,
           );
         }
