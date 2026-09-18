@@ -11,6 +11,11 @@ export abstract class BaseEntity extends UUIDV7Entity {
   updatedAt!: Date;
 
   @Exclude()
-  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamptz',
+    nullable: true,
+    select: false,
+  })
   deletedAt?: Date | null;
 }
