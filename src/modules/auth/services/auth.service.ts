@@ -120,6 +120,14 @@ export class AuthService {
       );
     }
 
+    if (!user.isEmailVerified) {
+      throw new AppException(
+        ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
+        'Email not verified',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     return this.generateAuthTokens(user.id, user.email);
   }
 
@@ -203,7 +211,7 @@ export class AuthService {
       throw new AppException(
         ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
         'Email not verified',
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.FORBIDDEN,
       );
     }
 
