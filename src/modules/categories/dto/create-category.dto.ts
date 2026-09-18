@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsOptional,
@@ -7,16 +8,22 @@ import {
 } from 'class-validator';
 
 export class CreateCategoryDto {
+  @ApiProperty({ example: 'Work' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
   name!: string;
 
+  @ApiPropertyOptional({
+    example: 'Organize tasks related to work activities',
+    nullable: true,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(255)
   description?: string;
 
+  @ApiProperty({ example: '#aaa' })
   @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
     message: 'color must be a valid hex color (e.g. #ffffff or #fff)',
   })
