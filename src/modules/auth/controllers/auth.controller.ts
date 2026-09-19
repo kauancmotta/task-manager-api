@@ -6,9 +6,11 @@ import {
   HttpStatus,
   Post,
   Request,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { AuthService } from '@modules/auth/services/auth.service';
 import { RefreshTokensService } from '@modules/auth/services/refresh-tokens.service';
@@ -32,8 +34,10 @@ import { CurrentUser } from '@common/decorators/current-user.decorator';
 import {
   SwaggerAuthForgotPasswordDoc,
   SwaggerAuthGetMeDoc,
+  SwaggerAuthGoogleCallbackDoc,
   SwaggerAuthGoogleDoc,
   SwaggerAuthLoginDoc,
+  SwaggerAuthLogoutAllDoc,
   SwaggerAuthLogoutDoc,
   SwaggerAuthRefreshDoc,
   SwaggerAuthRegisterDoc,
@@ -41,6 +45,8 @@ import {
   SwaggerAuthResetPasswordDoc,
   SwaggerAuthVerifyEmailDoc,
 } from '@modules/auth/swagger';
+import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from '@common/config/env.config';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -49,6 +55,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly refreshTokensService: RefreshTokensService,
     private readonly usersService: UsersService,
+    private readonly configService: ConfigService<EnvConfig, true>,
   ) {}
 
   @SwaggerAuthRegisterDoc()
@@ -82,6 +89,13 @@ export class AuthController {
     return this.refreshTokensService.revoke(logoutDto.refreshToken);
   }
 
+  @SwaggerAuthLogoutAllDoc()
+  @Post('/logout-all')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logoutAll(@CurrentUser() user: JwtPayload) {
+    return this.refreshTokensService.revokeAll(user.sub);
+  }
+
   @SwaggerAuthGoogleDoc()
   @Public()
   @Get('/google')
@@ -91,12 +105,29 @@ export class AuthController {
     // GoogleAuthGuard intercepts the request and redirects to Google OAuth2 consent screen.
   }
 
-  @ApiExcludeEndpoint()
+  @SwaggerAuthGoogleCallbackDoc()
   @Public()
   @Get('/google/callback')
+  @HttpCode(HttpStatus.FOUND)
   @UseGuards(GoogleAuthGuard)
-  googleCallback(@Request() req: AuthRequest<GoogleProfile>) {
-    return this.authService.loginWithGoogle(req.user);
+  async googleCallback(
+    @Request() req: AuthRequest<GoogleProfile>,
+    @Res() res: Response,
+  ) {
+    const tokens = await this.authService.loginWithGoogle(req.user);
+
+    const params = new URLSearchParams({
+      accessToken: tokens.accessToken.token,
+      accessTokenExpiresAt: tokens.accessToken.expiresAt.toISOString(),
+      refreshToken: tokens.refreshToken.token,
+      refreshTokenExpiresAt: tokens.refreshToken.expiresAt.toISOString(),
+    });
+
+    const FRONTEND_URL = this.configService.get('FRONTEND_URL', {
+      infer: true,
+    });
+
+    return res.redirect(`${FRONTEND_URL}/auth/callback?${params}`);
   }
 
   @SwaggerAuthResendVerificationEmailDoc()
