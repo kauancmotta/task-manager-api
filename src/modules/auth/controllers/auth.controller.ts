@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +20,7 @@ import {
   LogoutDto,
   RefreshDto,
   RegisterDto,
+  ResendEmailDto,
   ResetPasswordDto,
   VerifyEmailDto,
 } from '@modules/auth/dto';
@@ -37,6 +37,7 @@ import {
   SwaggerAuthLogoutDoc,
   SwaggerAuthRefreshDoc,
   SwaggerAuthRegisterDoc,
+  SwaggerAuthResendVerificationEmailDoc,
   SwaggerAuthResetPasswordDoc,
   SwaggerAuthVerifyEmailDoc,
 } from '@modules/auth/swagger';
@@ -98,11 +99,19 @@ export class AuthController {
     return this.authService.loginWithGoogle(req.user);
   }
 
+  @SwaggerAuthResendVerificationEmailDoc()
+  @Public()
+  @Post('/resend-verification-email')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  resendVerificationEmail(@Body() resendEmailDto: ResendEmailDto) {
+    return this.authService.resendVerificationEmail(resendEmailDto);
+  }
+
   @SwaggerAuthVerifyEmailDoc()
   @Public()
-  @Get('/verify-email')
+  @Post('/verify-email')
   @HttpCode(HttpStatus.NO_CONTENT)
-  verifyEmail(@Query() verifyEmailDto: VerifyEmailDto) {
+  verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     return this.authService.verifyEmail(verifyEmailDto.token);
   }
 

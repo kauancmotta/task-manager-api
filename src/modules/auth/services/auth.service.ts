@@ -15,6 +15,7 @@ import {
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
+  ResendEmailDto,
   ResetPasswordDto,
 } from '@modules/auth/dto';
 import { JwtPayload } from '@modules/auth/interfaces/jwt-payload.interface';
@@ -157,6 +158,44 @@ export class AuthService {
     return this.generateAuthTokens(user.id, user.email);
   }
 
+  async resendVerificationEmail(resendEmailDto: ResendEmailDto) {
+    const user = await this.findUserByEmail(resendEmailDto.email);
+
+    if (!user) return;
+
+    if (user.isEmailVerified) {
+      throw new AppException(
+        ErrorCodes.AUTH_EMAIL_ALREADY_VERIFIED,
+        'Email already verified',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    await this.emailVerificationsService.revokeAll({
+      userId: user.id,
+      type: EmailVerificationTypes.EMAIL_CONFIRMATION,
+    });
+
+    const token = await this.emailVerificationsService.create({
+      userId: user.id,
+      type: EmailVerificationTypes.EMAIL_CONFIRMATION,
+      token: generateToken(),
+    });
+
+    await this.mailService.sendMail(
+      buildEmailConfirmationMail({
+        to: resendEmailDto.email,
+        variables: {
+          appUrl: this.configService.get('APP_URL', { infer: true }),
+          expiresIn: this.configService.get('MAIL_EXPIRES_IN', {
+            infer: true,
+          }),
+          token,
+        },
+      }),
+    );
+  }
+
   async verifyEmail(token: string) {
     const type = EmailVerificationTypes.EMAIL_CONFIRMATION;
 
@@ -207,13 +246,10 @@ export class AuthService {
 
     if (!user) return;
 
-    if (!user.isEmailVerified) {
-      throw new AppException(
-        ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
-        'Email not verified',
-        HttpStatus.FORBIDDEN,
-      );
-    }
+    await this.emailVerificationsService.revokeAll({
+      userId: user.id,
+      type: EmailVerificationTypes.PASSWORD_RESET,
+    });
 
     const token = await this.emailVerificationsService.create({
       userId: user.id,
@@ -249,7 +285,7 @@ export class AuthService {
       const result = await manager.update(
         User,
         { id: emailVerification.userId },
-        { password: hashedPassword },
+        { password: hashedPassword, isEmailVerified: true },
       );
 
       if (!result.affected) {

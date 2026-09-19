@@ -8,6 +8,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   EmailVerificationContextWithManager,
   EmailVerificationContextWithRevoke,
+  EmailVerificationContextWithRevokeAll,
   EmailVerificationContextWithValidate,
 } from '@modules/auth/interfaces';
 import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
@@ -105,6 +106,25 @@ export class EmailVerificationsService {
     }
 
     this.logger.log(`Email verification revoked for User ID: ${userId}`);
+  }
+
+  async revokeAll({
+    type,
+    userId,
+    manager,
+  }: EmailVerificationContextWithRevokeAll) {
+    const emailVerificationRepo = manager
+      ? manager.getRepository(EmailVerification)
+      : this.emailVerificationRepository;
+
+    const result = await emailVerificationRepo.delete({
+      userId,
+      type,
+    });
+
+    if (result.affected) {
+      this.logger.log(`Email verifications revoked for User ID: ${userId}`);
+    }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)

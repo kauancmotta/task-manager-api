@@ -89,6 +89,21 @@ export const SwaggerAuthGoogleDoc = () =>
     }),
   );
 
+export const SwaggerAuthResendVerificationEmailDoc = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Resend email verification',
+      description:
+        'Resends the email verification link to the authenticated user. Only available for users with unverified emails.',
+    }),
+    ApiResponse({ status: HttpStatus.NO_CONTENT }),
+    SwaggerValidationResponse(),
+    SwaggerConflictResponse({
+      errorCode: ErrorCodes.AUTH_EMAIL_ALREADY_VERIFIED,
+      message: 'Email already verified',
+    }),
+  );
+
 export const SwaggerAuthVerifyEmailDoc = () =>
   applyDecorators(
     ApiOperation({
@@ -118,10 +133,6 @@ export const SwaggerAuthForgotPasswordDoc = () =>
     }),
     ApiResponse({ status: HttpStatus.NO_CONTENT }),
     SwaggerValidationResponse(),
-    SwaggerForbiddenResponse({
-      errorCode: ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
-      message: 'Email not verified',
-    }),
   );
 
 export const SwaggerAuthResetPasswordDoc = () =>

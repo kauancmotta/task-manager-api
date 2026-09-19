@@ -25,6 +25,10 @@ export type EmailVerificationContextWithRevoke = EmailVerificationContext & {
   manager?: EntityManager;
 };
 
+export type EmailVerificationContextWithRevokeAll = EmailVerificationContext & {
+  manager?: EntityManager;
+};
+
 export type EmailVerificationContextWithSendEmail<T> = Omit<
   MailContext<T>,
   'subject'
