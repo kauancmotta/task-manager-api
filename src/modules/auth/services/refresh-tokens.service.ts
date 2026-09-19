@@ -91,6 +91,11 @@ export class RefreshTokensService {
     this.logger.log(`Refresh Token: ${refreshToken} removed successfully`);
   }
 
+  async revokeAll(userId: string) {
+    await this.refreshTokenRepository.delete({ userId });
+    this.logger.log(`All refresh tokens revoked for User ID: ${userId}`);
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanExpired() {
     const result = await this.refreshTokenRepository.delete({
