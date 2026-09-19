@@ -45,6 +45,10 @@ class EnvironmentVariables {
   APP_URL!: string;
 
   @IsString()
+  @IsUrl({ require_tld: false }) // ← require_tld: false allowed localhost
+  FRONTEND_URL!: string;
+
+  @IsString()
   DATABASE_URL!: string;
 
   @IsNumber()

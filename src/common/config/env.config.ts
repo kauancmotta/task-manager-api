@@ -3,6 +3,7 @@ import { StringValue } from 'ms';
 export interface EnvConfig {
   NODE_ENV: 'development' | 'production' | 'test';
   APP_URL: string;
+  FRONTEND_URL: string;
   DATABASE_URL: string;
   PORT: number;
   JWT_SECRET: string;
