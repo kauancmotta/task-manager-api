@@ -76,6 +76,18 @@ export const SwaggerAuthLogoutDoc = () =>
     }),
   );
 
+export const SwaggerAuthLogoutAllDoc = () =>
+  applyDecorators(
+    ApiBearerAuth(),
+    ApiOperation({
+      summary: 'Revoke all sessions',
+      description:
+        'Invalidates all refresh tokens for the authenticated user, ending all active sessions across all devices.',
+    }),
+    ApiResponse({ status: HttpStatus.NO_CONTENT }),
+    SwaggerValidationResponse(),
+  );
+
 export const SwaggerAuthGoogleDoc = () =>
   applyDecorators(
     ApiOperation({
@@ -83,6 +95,23 @@ export const SwaggerAuthGoogleDoc = () =>
       description: 'Redirects the user to Google consent screen.',
     }),
     ApiResponse({ status: HttpStatus.FOUND }),
+    SwaggerServiceUnavailableResponse({
+      errorCode: ErrorCodes.GOOGLE_OAUTH_DISABLED,
+      message: 'Google OAuth2 is not enabled',
+    }),
+  );
+
+export const SwaggerAuthGoogleCallbackDoc = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Handle Google OAuth2 callback',
+      description:
+        'This endpoint is called automatically by Google after OAuth2 authentication. Do not call directly — use GET /auth/google to initiate the flow.',
+    }),
+    ApiResponse({
+      status: HttpStatus.FOUND,
+      description: 'Redirects to frontend with tokens as query parameters',
+    }),
     SwaggerServiceUnavailableResponse({
       errorCode: ErrorCodes.GOOGLE_OAUTH_DISABLED,
       message: 'Google OAuth2 is not enabled',
