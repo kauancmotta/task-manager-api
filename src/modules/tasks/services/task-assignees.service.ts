@@ -43,6 +43,7 @@ export class TaskAssigneesService {
 
   async create({ userId, taskId }: TaskContext) {
     await this.validateExistTask({ userId, taskId });
+    await this.validateUserAlreadyAssigned({ userId, taskId });
 
     const taskAssignee = this.taskAssigneeRepository.create({
       userId,
@@ -85,6 +86,20 @@ export class TaskAssigneesService {
         ErrorCodes.TASK_NOT_FOUND,
         'Task not found',
         HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  private async validateUserAlreadyAssigned({ userId, taskId }: TaskContext) {
+    const exists = await this.taskAssigneeRepository.exists({
+      where: { userId, taskId },
+    });
+
+    if (exists) {
+      throw new AppException(
+        ErrorCodes.TASK_ASSIGNEE_ALREADY_EXISTS,
+        'User is already assigned to this task',
+        HttpStatus.CONFLICT,
       );
     }
   }

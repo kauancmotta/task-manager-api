@@ -1,5 +1,8 @@
 import { ErrorCodes } from '@common/enums/error-codes.enum';
-import { SwaggerNotFoundResponse } from '@common/swagger';
+import {
+  SwaggerConflictResponse,
+  SwaggerNotFoundResponse,
+} from '@common/swagger';
 import { TaskAssigneePresenter } from '@modules/tasks/presenters';
 import { applyDecorators, HttpStatus } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -41,6 +44,10 @@ export const SwaggerTaskAssigneeCreateDoc = () =>
     SwaggerNotFoundResponse({
       errorCode: ErrorCodes.TASK_NOT_FOUND,
       message: 'Task not found',
+    }),
+    SwaggerConflictResponse({
+      errorCode: ErrorCodes.TASK_ASSIGNEE_ALREADY_EXISTS,
+      message: 'User is already assigned to this task',
     }),
   );
 
