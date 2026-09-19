@@ -36,7 +36,7 @@ async function bootstrap() {
     .setDescription(
       'REST API for task management with authentication, categories and file uploads',
     )
-    .setVersion('1.4.0')
+    .setVersion('1.6.0')
     .addBearerAuth()
     .build();
 
