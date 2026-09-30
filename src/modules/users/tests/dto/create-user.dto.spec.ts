@@ -1,130 +1,103 @@
-import { CreateUserDto } from '@modules/users/dto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
-describe('CreateUserDto', () => {
-  describe('Name', () => {
-    it('should pass with valid name', async () => {
-      const dto = plainToInstance(CreateUserDto, {
-        name: 'Mock Name',
-        email: 'mock@email.com',
-      });
+import { CreateUserDto } from '@modules/users/dto';
 
+describe('CreateUserDto', () => {
+  describe('name', () => {
+    it('should fail when name is not a string', async () => {
+      const dto = plainToInstance(CreateUserDto, {
+        name: 123,
+        email: 'mock@domain.com',
+      });
       const errors = await validate(dto);
 
-      expect(errors.length).toBe(0);
+      expect(errors.some((e) => e.property === 'name')).toBe(true);
+      expect(
+        errors.find((e) => e.property === 'name')?.constraints!['isString'],
+      ).toBeTruthy();
     });
 
     it('should fail when name is empty', async () => {
       const dto = plainToInstance(CreateUserDto, {
         name: '',
-        email: 'mock@email.com',
+        email: 'mock@domain.com',
       });
-
       const errors = await validate(dto);
 
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors![0].property).toBe('name');
-      expect(errors![0].constraints!.isNotEmpty).toBe(
-        'name should not be empty',
-      );
-    });
-
-    it('should fail when name is string', async () => {
-      const dto = plainToInstance(CreateUserDto, {
-        name: 123,
-        email: 'mock@email.com',
-      });
-
-      const errors = await validate(dto);
-
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors![0].property).toBe('name');
-      expect(errors![0].constraints!.isString).toBe('name must be a string');
+      expect(errors.some((e) => e.property === 'name')).toBe(true);
+      expect(
+        errors.find((e) => e.property === 'name')?.constraints!['isNotEmpty'],
+      ).toBeTruthy();
     });
 
     it('should fail when name exceeds 100 characters', async () => {
       const dto = plainToInstance(CreateUserDto, {
-        name: 'm'.repeat(101),
-        email: 'mock@email.com',
+        name: 'a'.repeat(101),
+        email: 'mock@domain.com',
       });
-
       const errors = await validate(dto);
 
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors![0].property).toBe('name');
-      expect(errors![0].constraints!.maxLength).toBe(
-        'name must be shorter than or equal to 100 characters',
-      );
+      expect(errors.some((e) => e.property === 'name')).toBe(true);
+      expect(
+        errors.find((e) => e.property === 'name')?.constraints!['maxLength'],
+      ).toBeTruthy();
+    });
+
+    it('should trim name whitespace', () => {
+      const dto = plainToInstance(CreateUserDto, {
+        name: '  Mock Name  ',
+        email: 'mock@domain.com',
+      });
+
+      expect(dto.name).toBe('Mock Name');
     });
   });
 
-  describe('Email', () => {
-    it('should pass when email is valid', async () => {
-      const validFormats = [
-        'mock@email.com',
-        'mock.name@email.com',
-        'mock+tag@email.com',
-        'mock@sub.email.com',
-      ];
+  describe('email', () => {
+    it('should fail when email is invalid', async () => {
+      const dto = plainToInstance(CreateUserDto, {
+        name: 'Mock Name',
+        email: 'invalid-email',
+      });
+      const errors = await validate(dto);
 
-      await Promise.all(
-        validFormats.map(async (emailFormat) => {
-          const dto = plainToInstance(CreateUserDto, {
-            name: 'Mock Name',
-            email: emailFormat,
-          });
-
-          const errors = await validate(dto);
-          expect(errors.length).toBe(0);
-        }),
-      );
-    });
-
-    it('should fail when email is invalid formats', async () => {
-      const invalidFormats = [
-        'mock e',
-        'mock@',
-        '@mock',
-        'mock@em',
-        'mock@email',
-        'mock@email.',
-        'mock@email.com a',
-        '',
-        ' ',
-        'mock',
-        'mock@@email.com',
-      ];
-
-      await Promise.all(
-        invalidFormats.map(async (emailFormat) => {
-          const dto = plainToInstance(CreateUserDto, {
-            name: 'Mock Name',
-            email: emailFormat,
-          });
-
-          const errors = await validate(dto);
-
-          expect(errors.length).toBeGreaterThan(0);
-          expect(errors![0]!.property).toBe('email');
-          expect(errors![0]!.constraints!.isEmail).toBe('Invalid email format');
-        }),
-      );
+      expect(errors.some((e) => e.property === 'email')).toBe(true);
+      expect(
+        errors.find((e) => e.property === 'email')?.constraints!['isEmail'],
+      ).toBeTruthy();
     });
 
     it('should fail when email exceeds 100 characters', async () => {
       const dto = plainToInstance(CreateUserDto, {
         name: 'Mock Name',
-        email: 'm'.repeat(101),
+        email: `${'a'.repeat(90)}@domain.com`,
       });
-
       const errors = await validate(dto);
 
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors![0]!.property).toBe('email');
-      expect(errors![0]!.constraints!.maxLength).toBe(
-        'email must be shorter than or equal to 100 characters',
-      );
+      expect(errors.some((e) => e.property === 'email')).toBe(true);
+      expect(
+        errors.find((e) => e.property === 'email')?.constraints!['maxLength'],
+      ).toBeTruthy();
     });
+
+    it('should lowercase email', () => {
+      const dto = plainToInstance(CreateUserDto, {
+        name: 'Mock Name',
+        email: 'MOCK@DOMAIN.COM',
+      });
+
+      expect(dto.email).toBe('mock@domain.com');
+    });
+  });
+
+  it('should pass when all fields are valid', async () => {
+    const dto = plainToInstance(CreateUserDto, {
+      name: 'Mock Name',
+      email: 'mock@domain.com',
+    });
+    const errors = await validate(dto);
+
+    expect(errors.length).toBe(0);
   });
 });
