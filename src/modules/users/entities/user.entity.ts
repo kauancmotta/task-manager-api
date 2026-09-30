@@ -34,24 +34,36 @@ export class User extends BaseEntity {
   @OneToMany(
     () => EmailVerification,
     (emailVerification) => emailVerification.user,
+    { cascade: ['remove'] },
   )
   emailVerifications!: EmailVerification[];
 
-  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user, {
+    cascade: ['remove'],
+  })
   refreshTokens!: RefreshToken[];
 
-  @OneToMany(() => Category, (category) => category.createdByUser)
+  @OneToMany(() => Category, (category) => category.createdByUser, {
+    cascade: ['remove'],
+  })
   categories!: Category[];
 
-  @OneToMany(() => Task, (task) => task.createdByUser)
+  @OneToMany(() => Task, (task) => task.createdByUser, {
+    cascade: ['soft-remove'],
+  })
   tasks!: Task[];
 
-  @OneToMany(() => TaskAssignee, (taskAssignee) => taskAssignee.user)
+  @OneToMany(() => TaskAssignee, (taskAssignee) => taskAssignee.user, {
+    cascade: ['soft-remove'],
+  })
   taskAssignees!: TaskAssignee[];
 
   @OneToMany(
     () => TaskAttachment,
     (taskAttachment) => taskAttachment.uploadedByUser,
+    {
+      cascade: ['soft-remove'],
+    },
   )
   taskAttachments!: TaskAttachment[];
 }

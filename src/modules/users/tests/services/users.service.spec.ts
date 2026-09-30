@@ -394,21 +394,6 @@ describe('UsersService', () => {
   });
 
   describe('remove', () => {
-    it('should call repository.remove and remove user', async () => {
-      const id = uuidv7();
-
-      const mockUser = createMockUser({ id });
-      const mockDeleteResult = createMockDeleteResult(1);
-
-      userRepository.softDelete!.mockResolvedValue(mockDeleteResult);
-
-      await service.remove(mockUser.id);
-
-      expect(userRepository.softDelete).toHaveBeenCalledWith({
-        id: mockUser.id,
-      });
-    });
-
     it('should throw NotFoundException when user not found', async () => {
       const id = uuidv7();
 
@@ -424,6 +409,18 @@ describe('UsersService', () => {
           HttpStatus.NOT_FOUND,
         ),
       );
+    });
+
+    it('should remove user successfully', async () => {
+      const mockUser = createMockUser();
+
+      vi.mocked(userRepository.findOne!).mockResolvedValue(mockUser);
+      vi.mocked(userRepository.softRemove!).mockResolvedValue(mockUser);
+
+      await service.remove(mockUser.id);
+
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(userRepository.softRemove).toHaveBeenCalledWith(mockUser);
     });
   });
 });

@@ -206,12 +206,12 @@ export class TasksService {
   }
 
   async remove({ userId, taskId }: TaskContext) {
-    const result = await this.taskRepository.softDelete({
-      id: taskId,
-      createdByUserId: userId,
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId, createdByUserId: userId },
+      relations: { taskAssignees: true, taskAttachments: true },
     });
 
-    if (!result.affected) {
+    if (!task) {
       throw new AppException(
         ErrorCodes.TASK_NOT_FOUND,
         'Task not found',
@@ -219,7 +219,8 @@ export class TasksService {
       );
     }
 
-    this.logger.log(`Task ID: ${taskId} deleted successfully`);
+    await this.taskRepository.softRemove(task);
+    this.logger.log(`Task ID: ${taskId} removed successfully`);
   }
 
   async removeTaskCategory({
