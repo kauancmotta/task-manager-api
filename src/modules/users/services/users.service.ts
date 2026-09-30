@@ -155,10 +155,20 @@ export class UsersService {
     );
   }
 
-  async remove(id: string) {
-    const result = await this.userRepository.softDelete({ id });
+  async remove(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: {
+        tasks: true,
+        categories: true,
+        refreshTokens: true,
+        emailVerifications: true,
+        taskAssignees: true,
+        taskAttachments: true,
+      },
+    });
 
-    if (!result.affected) {
+    if (!user) {
       throw new AppException(
         ErrorCodes.USER_NOT_FOUND,
         'User not found',
@@ -166,7 +176,8 @@ export class UsersService {
       );
     }
 
-    this.logger.log(`User ID: ${id} deleted successfully`);
+    await this.userRepository.softRemove(user);
+    this.logger.log(`User ID: ${userId} removed successfully`);
   }
 
   private async validateExistEmail(email: string) {
