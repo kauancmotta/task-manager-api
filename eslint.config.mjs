@@ -39,4 +39,10 @@ export default [
       'vitest/valid-describe-callback': 'error',
     },
   },
+  {
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
 ];

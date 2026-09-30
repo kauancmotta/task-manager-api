@@ -68,7 +68,6 @@ export class TaskAttachmentsService {
       );
     }
 
-    await this.storageService.delete(attachment.fileUrl);
     await this.taskAttachmentRepository.softDelete({
       id: attachmentId,
       taskId,

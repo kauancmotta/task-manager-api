@@ -11,6 +11,7 @@ export default defineConfig({
       '@modules': './src/modules',
       '@config': './src/config',
     },
+    setupFiles: ['reflect-metadata']
   },
   plugins: [swc.vite()],
 });
