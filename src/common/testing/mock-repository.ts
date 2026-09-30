@@ -18,6 +18,7 @@ export const createMockRepository = <
   update: vi.fn(),
   delete: vi.fn().mockResolvedValue({ affected: 1 }),
   softDelete: vi.fn(),
+  softRemove: vi.fn(),
   restore: vi.fn(),
   count: vi.fn(),
   exists: vi.fn(),

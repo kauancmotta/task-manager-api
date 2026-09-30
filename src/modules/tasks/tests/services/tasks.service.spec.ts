@@ -678,20 +678,13 @@ describe('TasksService', () => {
       const mockJwtPayload = createMockJwtPayload();
       const mockTask = createMockTask({ createdByUserId: mockJwtPayload.sub });
 
-      vi.mocked(taskRepository.softDelete!).mockResolvedValue(
-        createMockDeleteResult(1),
-      );
+      vi.mocked(taskRepository.findOne!).mockResolvedValue(mockTask);
+      vi.mocked(taskRepository.softRemove!).mockResolvedValue(mockTask);
 
-      const result = await service.remove({
-        userId: mockJwtPayload.sub,
-        taskId: mockTask.id,
-      });
+      await service.remove({ userId: mockJwtPayload.sub, taskId: mockTask.id });
 
-      expect(taskRepository.softDelete).toHaveBeenCalledWith({
-        id: mockTask.id,
-        createdByUserId: mockJwtPayload.sub,
-      });
-      expect(result).toBeUndefined();
+      expect(taskRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(taskRepository.softRemove).toHaveBeenCalledWith(mockTask);
     });
   });
 
