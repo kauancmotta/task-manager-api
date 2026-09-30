@@ -57,9 +57,13 @@ export class Task extends BaseEntity {
   })
   createdByUser!: User;
 
-  @OneToMany(() => TaskAssignee, (taskAssignee) => taskAssignee.task)
+  @OneToMany(() => TaskAssignee, (taskAssignee) => taskAssignee.task, {
+    cascade: ['soft-remove'],
+  })
   taskAssignees!: TaskAssignee[];
 
-  @OneToMany(() => TaskAttachment, (taskAttachment) => taskAttachment.task)
+  @OneToMany(() => TaskAttachment, (taskAttachment) => taskAttachment.task, {
+    cascade: ['soft-remove'],
+  })
   taskAttachments!: TaskAttachment[];
 }
