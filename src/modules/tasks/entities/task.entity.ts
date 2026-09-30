@@ -31,7 +31,7 @@ export class Task extends BaseEntity {
   priority!: TaskPriority;
 
   @Column({ name: 'due_date', type: 'timestamptz', nullable: true })
-  dueDate?: Date;
+  dueDate?: Date | null;
 
   @Column({ name: 'created_by_user_id' })
   createdByUserId!: string;
