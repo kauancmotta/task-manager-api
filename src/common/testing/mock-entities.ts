@@ -88,14 +88,18 @@ export const createMockEmailVerification = (
 
 export const createMockRefreshToken = (
   overrides?: Partial<RefreshToken>,
-): Omit<RefreshToken, 'generateId' | 'user'> => ({
-  id: uuidv7(),
-  refreshToken: 'mock-refresh-token',
-  userId: 'mock-user-id',
-  expiresAt: new Date(),
-  createdAt: new Date(),
-  ...overrides,
-});
+): Omit<RefreshToken, 'generateId' | 'user'> => {
+  const TOMORROW_MILLI_SECONDS = 86400000;
+
+  return {
+    id: uuidv7(),
+    refreshToken: 'mock-refresh-token',
+    userId: 'mock-user-id',
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + TOMORROW_MILLI_SECONDS),
+    ...overrides,
+  };
+};
 
 export const createMockFile = (
   overrides?: Partial<Express.Multer.File>,
