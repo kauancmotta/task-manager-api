@@ -142,8 +142,8 @@ yarn start:dev                    # development (watch mode)
 yarn build && yarn start:prod     # production
 ```
 
-API: `http://localhost:3000`  
-Swagger: `http://localhost:3000/api/docs`
+API: `http://localhost:3001`  
+Swagger: `http://localhost:3001/api/docs`
 
 ---
 
@@ -274,7 +274,7 @@ The E2E suite covers auth flows (register → verify → login → refresh → l
 
 ```bash
 # Server
-PORT=3000
+PORT=3001
 
 # Database
 DB_HOST=localhost
@@ -296,7 +296,7 @@ SMTP_USER=your@email.com
 SMTP_PASS=your_password
 
 # App
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:3001
 
 # Storage: "local" (default) or "s3"
 STORAGE_PROVIDER=local

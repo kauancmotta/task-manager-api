@@ -88,7 +88,7 @@ jobs:
           cat <<EOF > .env.test
           NODE_ENV=test
 
-          PORT=3000
+          PORT=3001
 
           DB_HOST=localhost
           DB_PORT=5432
@@ -106,7 +106,7 @@ jobs:
           SMTP_USER=test
           SMTP_PASS=test
 
-          APP_URL=http://localhost:3000
+          APP_URL=http://localhost:3001
 
           STORAGE_PROVIDER=local
 
