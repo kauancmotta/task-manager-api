@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.10.1](https://github.com/kauancmotta/task-manager-api/compare/v1.10.0...v1.10.1) (2026-10-23)
+
+### 🐛 Bug Fixes
+
+* update jwt guard and auth module for e2e compatibility ([3f6bb2e](https://github.com/kauancmotta/task-manager-api/commit/3f6bb2e5ee347d0f3280bc82226761a5d8f84c7f))
+
+### 📝 Documentation
+
+* update README with e2e tests, correct docker paths and endpoints ([33099ec](https://github.com/kauancmotta/task-manager-api/commit/33099ec54ffc05785bc8960ca39b31a0087f0df5))
+
+### 🔧 Chores
+
+* add e2e test config and update project dependencies ([189d837](https://github.com/kauancmotta/task-manager-api/commit/189d8372d9c2b0a483a2f217b6a280875e253882))
+* bump version to 1.10.0 ([40b8284](https://github.com/kauancmotta/task-manager-api/commit/40b82848eddf7f15f8d773b0f51131ec2cc2c3b9))
+
+### 🧪 Tests
+
+* add e2e test infrastructure ([68f8e37](https://github.com/kauancmotta/task-manager-api/commit/68f8e37e4cc099c37190b162f12b952b206b4fc2))
+* add e2e tests for auth, categories, tasks and users ([8903f2d](https://github.com/kauancmotta/task-manager-api/commit/8903f2d27620477edb7a55b3e2a6c22f8382b56f))
+
 ## 1.10.0 (2026-09-30)
 
 ### ✨ Features
