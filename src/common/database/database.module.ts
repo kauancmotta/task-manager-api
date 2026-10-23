@@ -10,6 +10,7 @@ import { TaskAssignee } from '@modules/tasks/entities/task-assignee.entity';
 import { TaskAttachment } from '@modules/tasks/entities/task-attachment.entity';
 import { RefreshToken } from '@modules/auth/entities/refresh-token.entity';
 import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
+import { InitialSchemas1790874021045 } from '@common/database/migrations/1790874021045-initial-schemas';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { EmailVerification } from '@modules/auth/entities/email-verification.ent
           TaskAssignee,
           TaskAttachment,
         ],
-        migrations: [__dirname + '/migrations/*.js'],
+        migrations: [InitialSchemas1790874021045],
         synchronize: false,
       }),
     }),
