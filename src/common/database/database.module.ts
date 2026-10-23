@@ -31,6 +31,7 @@ import { InitialSchemas1790874021045 } from '@common/database/migrations/1790874
         ],
         migrations: [InitialSchemas1790874021045],
         synchronize: false,
+        migrationsRun: true,
       }),
     }),
   ],
