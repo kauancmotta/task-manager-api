@@ -6,12 +6,13 @@ export default defineConfig({
     globals: true,
     clearMocks: true,
     root: './',
+    exclude: ['test/**/*.e2e-spec.ts', 'node_modules/**'],
     alias: {
       '@common': './src/common',
       '@modules': './src/modules',
       '@config': './src/config',
     },
-    setupFiles: ['reflect-metadata']
+    setupFiles: ['reflect-metadata'],
   },
   plugins: [swc.vite()],
 });

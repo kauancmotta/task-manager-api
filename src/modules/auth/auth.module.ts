@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
 
 import { EnvConfig } from '@common/config/env.config';
 import { AuthController } from '@modules/auth/controllers/auth.controller';
@@ -16,6 +17,7 @@ import { GoogleAuthModule } from '@modules/auth/google-auth.module';
 import { MailModule } from '@common/mail/mail.module';
 import { EmailVerificationsService } from '@modules/auth/services/email-verifications.service';
 import { EmailVerification } from '@modules/auth/entities/email-verification.entity';
+import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 
 const isGoogleOAuthEnabled = process.env.GOOGLE_OAUTH_ENABLED === 'true';
 @Module({
@@ -39,6 +41,7 @@ const isGoogleOAuthEnabled = process.env.GOOGLE_OAUTH_ENABLED === 'true';
   ],
   controllers: [AuthController],
   providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     AuthService,
     RefreshTokensService,
     EmailVerificationsService,
