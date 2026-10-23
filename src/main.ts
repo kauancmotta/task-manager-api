@@ -11,6 +11,7 @@ import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { AppValidationPipe } from '@common/pipes/validation.pipe';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ClassSerializerInterceptor } from '@nestjs/common';
+import { version } from '../package.json';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -36,7 +37,7 @@ async function bootstrap() {
     .setDescription(
       'REST API for task management with authentication, categories and file uploads',
     )
-    .setVersion('1.10.1')
+    .setVersion(version)
     .addBearerAuth()
     .build();
 
