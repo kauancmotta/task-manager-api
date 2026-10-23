@@ -88,29 +88,34 @@ jobs:
           cat <<EOF > .env.test
           NODE_ENV=test
 
+          DATABASE_URL=postgresql://${{ secrets.TEST_DB_USERNAME }}:${{ secrets.TEST_DB_PASSWORD }}@localhost:5432/${{ secrets.TEST_DB_DATABASE }}
+
+          APP_URL=http://localhost:3001/api
+          FRONTEND_URL=http://localhost:8080
+
           PORT=3001
 
-          DB_HOST=localhost
-          DB_PORT=5432
-          DB_USERNAME=${{ secrets.TEST_DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.TEST_DB_PASSWORD }}
-          DB_DATABASE=${{ secrets.TEST_DB_DATABASE }}
-
           JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRES_IN=15m
+          JWT_EXPIRES_IN=30m
           JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
           JWT_REFRESH_EXPIRES_IN=7d
 
-          SMTP_HOST=localhost
-          SMTP_PORT=1025
-          SMTP_USER=test
-          SMTP_PASS=test
-
-          APP_URL=http://localhost:3001
-
           STORAGE_PROVIDER=local
 
+          AWS_S3_BUCKET=
+          AWS_REGION=us-east-1
+          AWS_ACCESS_KEY_ID=
+          AWS_SECRET_ACCESS_KEY=
+
           GOOGLE_OAUTH_ENABLED=false
+          GOOGLE_CLIENT_ID=
+          GOOGLE_CLIENT_SECRET=
+          GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback
+
+          MAIL_HOST=localhost
+          MAIL_PORT=1025
+          MAIL_FROM=noreply@taskmanager.com
+          MAIL_EXPIRES_IN=30m
           EOF
 
       - name: Run E2E tests
