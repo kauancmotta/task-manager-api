@@ -20,6 +20,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
+    "resolveJsonModule": true,
     "types": ["node", "vitest/globals", "multer"],
     "paths": {
       "@common/*": ["./src/common/*"],
