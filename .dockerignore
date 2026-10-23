@@ -1,0 +1,11 @@
+node_modules
+dist
+.docker
+nginx
+.github
+test
+coverage
+.env
+.env.*
+*.md
+*.log

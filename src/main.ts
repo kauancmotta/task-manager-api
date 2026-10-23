@@ -3,6 +3,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { readFileSync } from 'fs';
 
 import { AppModule } from './app.module';
 import { TypeOrmExceptionFilter } from '@common/filters/typeorm-exception.filter';
@@ -11,7 +12,10 @@ import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard';
 import { AppValidationPipe } from '@common/pipes/validation.pipe';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ClassSerializerInterceptor } from '@nestjs/common';
-import { version } from '../package.json';
+
+const { version } = JSON.parse(
+  readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'),
+) as { version: string };
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -42,7 +46,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
 }
