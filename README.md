@@ -2,7 +2,7 @@
 
 # 📋 Task Manager API
 
-**A production-ready REST API for collaborative task management**
+**Task management API built to scale — JWT, OAuth2, S3, state machine and full test coverage**
 
 Built with NestJS · TypeORM · PostgreSQL · JWT · Google OAuth2
 
@@ -10,7 +10,7 @@ Built with NestJS · TypeORM · PostgreSQL · JWT · Google OAuth2
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?style=flat-square&logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)
 ![TypeORM](https://img.shields.io/badge/TypeORM-0.3-fe0902?style=flat-square)
-![Vitest](https://img.shields.io/badge/Vitest-55%2B%20tests-6e9f18?style=flat-square&logo=vitest&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-unit%20%2B%20e2e-6e9f18?style=flat-square&logo=vitest&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 
 </div>
@@ -26,7 +26,7 @@ Built with NestJS · TypeORM · PostgreSQL · JWT · Google OAuth2
 - 🏷️ **Categories** — Organize tasks with color-coded categories (minimum 1 per task enforced)
 - 📧 **Email Notifications** — Nodemailer + Handlebars templates for all auth flows
 - 📄 **OpenAPI / Swagger** — Full interactive docs at `/api/docs` with typed response schemas
-- 🧪 **Unit Tests** — 55+ Vitest test files covering all services, controllers and guards
+- 🧪 **Tests** — Unit tests (55+ files) covering services, controllers and guards + E2E tests with Supertest against a real PostgreSQL instance
 - 🗑️ **Cascade Soft-Delete** — Deleting a user propagates through tasks, assignees and attachments
 
 ---
@@ -43,7 +43,7 @@ Built with NestJS · TypeORM · PostgreSQL · JWT · Google OAuth2
 | Email | Nodemailer + Handlebars |
 | Storage | Local / AWS S3 (abstract provider) |
 | API Docs | @nestjs/swagger v8 |
-| Testing | Vitest |
+| Testing | Vitest + Supertest (E2E) |
 | Logging | nestjs-pino (structured) |
 | IDs | UUID v7 (time-sorted) |
 | Containerization | Docker + Docker Compose |
@@ -55,7 +55,7 @@ Built with NestJS · TypeORM · PostgreSQL · JWT · Google OAuth2
 ```
 src/
 ├── common/                   # Shared infrastructure
-│   ├── decorators/           # @CurrentUser, @Public
+│   ├── decorators/           # @CurrentUser, @Public, @UuidParam
 │   ├── exceptions/           # AppException + ErrorCodes enum
 │   ├── filters/              # Global exception filter
 │   ├── guards/               # JwtAuthGuard (applied globally)
@@ -85,6 +85,17 @@ src/
 │       ├── password-reset.hbs
 │       └── password-changed.hbs
 └── main.ts                   # Bootstrap, global pipes, CORS, Swagger
+
+test/
+├── helpers/
+│   ├── app.helper.ts         # App bootstrap + mail spy for E2E
+│   └── db.helper.ts          # Migrations + clearDatabase between tests
+├── interfaces/
+│   └── auth.interfaces.ts    # Shared response types
+├── auth.e2e-spec.ts
+├── categories.e2e-spec.ts
+├── tasks.e2e-spec.ts
+└── users.e2e-spec.ts
 ```
 
 ---
@@ -94,7 +105,7 @@ src/
 ### Prerequisites
 
 - Node.js 22+
-- pnpm
+- yarn
 - PostgreSQL 16 (or Docker)
 
 ### Installation
@@ -102,7 +113,7 @@ src/
 ```bash
 git clone https://github.com/kauancmotta/task-manager-api
 cd task-manager-api
-pnpm install
+yarn install
 ```
 
 ### Configure environment
@@ -115,20 +126,20 @@ cp .env.example .env
 ### Start the database
 
 ```bash
-docker compose up -d postgres
+docker compose -f ./.docker/docker-compose.dev.yaml up -d postgres
 ```
 
 ### Run migrations
 
 ```bash
-pnpm migration:run
+yarn migration:run
 ```
 
 ### Start the server
 
 ```bash
-pnpm start:dev           # development (watch mode)
-pnpm build && pnpm start:prod  # production
+yarn start:dev                    # development (watch mode)
+yarn build && yarn start:prod     # production
 ```
 
 API: `http://localhost:3000`  
@@ -159,20 +170,24 @@ Swagger: `http://localhost:3000/api/docs`
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/tasks` | List tasks with pagination + filters |
+| `GET` | `/tasks` | List tasks with pagination + filters (status, search) |
 | `POST` | `/tasks` | Create task with categories (min 1 required) |
 | `GET` | `/tasks/:id` | Get task by ID |
-| `PATCH` | `/tasks/:id` | Update task (status, title, categories) |
+| `PATCH` | `/tasks/:id` | Update task name, description or priority |
+| `PATCH` | `/tasks/:id/status` | Update task status (follows state machine) |
 | `DELETE` | `/tasks/:id` | Soft-delete + cascade assignees/attachments |
-| `POST` | `/tasks/:id/attachments` | Upload file attachment |
-| `DELETE` | `/tasks/:id/attachments/:attachmentId` | Remove attachment |
+| `DELETE` | `/tasks/:id/:categoryId/category` | Remove a category from a task |
+| `POST` | `/tasks/:taskId/assignees` | Add assignee to task |
+| `DELETE` | `/tasks/:taskId/assignees/:id` | Remove assignee from task |
+| `POST` | `/tasks/:taskId/attachments` | Upload file attachment |
+| `DELETE` | `/tasks/:taskId/attachments/:id` | Remove attachment |
 
 ### Categories — `/categories` 🔒
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/categories` | List user's categories (optional search) |
-| `POST` | `/categories` | Create category (name, description, color) |
+| `POST` | `/categories` | Create category (name, color, optional description) |
 | `GET` | `/categories/:id` | Get category by ID |
 | `PATCH` | `/categories/:id` | Update category |
 | `DELETE` | `/categories/:id` | Delete category (hard delete) |
@@ -181,9 +196,11 @@ Swagger: `http://localhost:3000/api/docs`
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/users/:id` | Get user profile |
-| `PATCH` | `/users/:id` | Update user profile |
-| `DELETE` | `/users/:id` | Soft-delete account + cascade all data |
+| `PATCH` | `/users/me` | Update user profile (name) |
+| `PATCH` | `/users/me/change-password` | Change password |
+| `PATCH` | `/users/me/avatar` | Upload avatar image |
+| `DELETE` | `/users/me/avatar` | Remove avatar |
+| `DELETE` | `/users/me` | Soft-delete account + cascade all data |
 
 ---
 
@@ -227,13 +244,29 @@ This project uses `softRemove()` on a loaded entity, which follows the relation 
 
 ## 🧪 Running Tests
 
+### Unit Tests
+
 ```bash
-pnpm test             # run all unit tests
-pnpm test:watch       # watch mode
-pnpm test:coverage    # with coverage report
+yarn test             # run all unit tests
+yarn test:watch       # watch mode
+yarn test:coverage    # with coverage report
 ```
 
 Tests use `vi.hoisted + vi.mock` for ESM-compatible mocking of `fs`, `nodemailer`, and `@aws-sdk/client-s3`. Every service and controller has full coverage including error paths and edge cases.
+
+### E2E Tests
+
+E2E tests run against a real PostgreSQL instance via Docker. Each test file runs in isolation — the database is cleared between tests and all files run sequentially to avoid conflicts.
+
+```bash
+# Start the test database
+docker compose -f ./.docker/docker-compose.test.yaml up -d
+
+# Run E2E tests
+yarn test:e2e
+```
+
+The E2E suite covers auth flows (register → verify → login → refresh → logout), categories, tasks (including status transitions and category management) and user operations.
 
 ---
 
@@ -285,10 +318,13 @@ GOOGLE_CALLBACK_URL=
 
 ```bash
 # Start all services (API + PostgreSQL)
-docker compose up
+docker compose -f ./.docker/docker-compose.dev.yaml up
 
 # Start only the database
-docker compose up -d postgres
+docker compose -f ./.docker/docker-compose.dev.yaml up -d postgres
+
+# Start the test database (isolated instance for E2E)
+docker compose -f ./.docker/docker-compose.test.yaml up -d
 ```
 
 ---
