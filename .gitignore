@@ -54,3 +54,13 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+tsconfig.tsbuildinfo
+tsconfig.build.tsbuildinfo
+
+# Uploads Multer
+uploads/
+
+# MailLog and PostgreSQL Data
+mail_log_data
+postgres_data

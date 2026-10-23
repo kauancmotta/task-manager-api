@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: TaskManagerDevelopment
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Interface web
+    networks:
+      - app
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    env_file:
+      - ../.env
+    networks:
+      - app
+    expose:
+      - "3001"
+    depends_on:
+      - db
+      - mailhog
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+
+networks:
+  app:
+    driver: bridge

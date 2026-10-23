@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run ESLint
+        run: yarn lint
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run unit tests
+        run: yarn test --reporter=verbose
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ${{ secrets.TEST_DB_USERNAME }}
+          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.TEST_DB_DATABASE }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Create .env.test
+        run: |
+          cat <<EOF > .env.test
+          NODE_ENV=test
+
+          DATABASE_URL=postgresql://${{ secrets.TEST_DB_USERNAME }}:${{ secrets.TEST_DB_PASSWORD }}@localhost:5432/${{ secrets.TEST_DB_DATABASE }}
+
+          APP_URL=http://localhost:3001/api
+          FRONTEND_URL=http://localhost:8080
+
+          PORT=3001
+
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN=30m
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+          JWT_REFRESH_EXPIRES_IN=7d
+
+          STORAGE_PROVIDER=local
+
+          AWS_S3_BUCKET=
+          AWS_REGION=us-east-1
+          AWS_ACCESS_KEY_ID=
+          AWS_SECRET_ACCESS_KEY=
+
+          GOOGLE_OAUTH_ENABLED=false
+          GOOGLE_CLIENT_ID=
+          GOOGLE_CLIENT_SECRET=
+          GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback
+
+          MAIL_HOST=localhost
+          MAIL_PORT=1025
+          MAIL_FROM=noreply@taskmanager.com
+          MAIL_EXPIRES_IN=30m
+          EOF
+
+      - name: Run E2E tests
+        run: yarn test:e2e
