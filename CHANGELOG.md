@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.12.0](https://github.com/kauancmotta/task-manager-api/compare/v1.11.0...v1.12.0) (2026-10-24)
+
+### ✨ Features
+
+* **observability:** add OpenTelemetry + Prometheus + Grafana + Tempo stack ([83e0c37](https://github.com/kauancmotta/task-manager-api/commit/83e0c3788035eac6b5244af3638fb13f3bb343a3))
+
+### 🐛 Bug Fixes
+
+* update OTEL_EXPORTER_OTLP_ENDPOINT to point to the correct collector URL ([cec3a20](https://github.com/kauancmotta/task-manager-api/commit/cec3a2077316cf80deb71b5bdbd2ac37d1e57525))
+
+### 🔧 Chores
+
+* release v1.11.0 ([6fc0367](https://github.com/kauancmotta/task-manager-api/commit/6fc0367862db87b9331de4ff181667709694fcb9))
+* update README to include storage directory for Abstract StorageService ([37b5cb0](https://github.com/kauancmotta/task-manager-api/commit/37b5cb06a84bc985d73fca1c55ec94ae49257815))
+
 ## [1.11.0](https://github.com/kauancmotta/task-manager-api/compare/v1.10.1...v1.11.0) (2026-10-24)
 
 ### ✨ Features
