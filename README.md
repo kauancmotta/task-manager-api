@@ -62,6 +62,7 @@ src/
 │   ├── interceptors/         # Logging interceptor
 │   ├── pipes/                # AppValidationPipe (structured errors)
 │   ├── presenters/           # Response serialization classes
+│   ├── storage/              # Abstract StorageService (Local / S3)
 │   ├── swagger/              # SwaggerXxxResponse helpers
 │   └── testing/              # Mock factories
 │       ├── mock-entities.ts
@@ -74,7 +75,6 @@ src/
 │   ├── users/                # User CRUD + soft-delete cascade
 │   ├── tasks/                # Tasks with state machine + QueryBuilder
 │   ├── categories/           # Category CRUD + validation
-│   └── storage/              # Abstract StorageService (Local / S3)
 ├── database/
 │   ├── entities/             # BaseEntity (soft-delete), all entities
 │   └── migrations/
