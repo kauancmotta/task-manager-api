@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.11.0](https://github.com/kauancmotta/task-manager-api/compare/v1.10.1...v1.11.0) (2026-10-24)
+
+### ✨ Features
+
+* add nginx with rate limiting for production ([762e91b](https://github.com/kauancmotta/task-manager-api/commit/762e91b792ab317300124030a8cdb500ccfea803))
+* enable auto migrations on startup ([b7ea4b2](https://github.com/kauancmotta/task-manager-api/commit/b7ea4b25adca06e66ee294a23219b9576a0f3d3f))
+* read swagger version dynamically from package.json ([8a01f9e](https://github.com/kauancmotta/task-manager-api/commit/8a01f9e8c5b25e67dc7ba6c3dbd142509ae06d7e))
+
+### 🔧 Chores
+
+* add production Dockerfile and dockerignore ([39d4b3b](https://github.com/kauancmotta/task-manager-api/commit/39d4b3b625f5ef12d23842775379fa2240bcec66))
+* fix tsconfig build for commonjs output ([1478164](https://github.com/kauancmotta/task-manager-api/commit/1478164deeaa05e0400745d73cc5e8ecc19b0101))
+* move workflows to correct directory ([a932369](https://github.com/kauancmotta/task-manager-api/commit/a9323698810d12ae54010ce9cb62c5ea393a8ecc))
+* remove automated release workflow ([798bc8a](https://github.com/kauancmotta/task-manager-api/commit/798bc8afc8b7db775e40e2b60e1704422726439b))
+* remove deprecated /docs route and update Swagger setup path to /api/docs ([fe4356d](https://github.com/kauancmotta/task-manager-api/commit/fe4356d97aca99a5aa970f3edeeebb4c551efab5))
+* update .env.test for database connection and application URLs ([92ae831](https://github.com/kauancmotta/task-manager-api/commit/92ae831619f47a99d25cfb01197cd03053c2bdd6))
+* update API version to 1.10.1 in Swagger documentation ([4b45723](https://github.com/kauancmotta/task-manager-api/commit/4b457234364fe1afd01b8b32b175a5a70c7d0cf7))
+* update default port from 3000 to 3001 ([52f0127](https://github.com/kauancmotta/task-manager-api/commit/52f01277bddbfa7e1aedb98934b3e1ae14a90229))
+* update env test and package.json ([2900611](https://github.com/kauancmotta/task-manager-api/commit/290061147dc9a2f4edfde72ef449392efd0a89ab))
+
 ## [1.10.1](https://github.com/kauancmotta/task-manager-api/compare/v1.10.0...v1.10.1) (2026-10-23)
 
 ### 🐛 Bug Fixes
