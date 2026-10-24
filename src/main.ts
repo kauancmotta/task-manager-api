@@ -1,3 +1,4 @@
+import './common/telemetry/instrumentation';
 import 'dotenv/config';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
@@ -13,9 +14,11 @@ import { AppValidationPipe } from '@common/pipes/validation.pipe';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ClassSerializerInterceptor } from '@nestjs/common';
 
-const { version } = JSON.parse(
+const pkg = JSON.parse(
   readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'),
-) as { version: string };
+) as Record<string, string>;
+
+const version = pkg['version'];
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
