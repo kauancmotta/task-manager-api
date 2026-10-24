@@ -1,0 +1,94 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    restart: unless-stopped
+    volumes:
+      - ../observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - app
+      - observability
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    restart: unless-stopped
+    volumes:
+      - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - observability
+
+  tempo:
+    image: grafana/tempo:2.6.0
+    restart: unless-stopped
+    user: root
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - tempo_data:/tmp/tempo
+    configs:
+      - source: tempo_config
+        target: /etc/tempo.yaml
+    networks:
+      - observability
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - observability
+
+configs:
+  tempo_config:
+    content: |
+      server:
+        http_listen_port: 3200
+      distributor:
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+                endpoint: 0.0.0.0:4317
+      ingester:
+        trace_idle_period: 10s
+        max_block_bytes: 1_000_000
+        max_block_duration: 5m
+      compactor:
+        compaction:
+          compaction_window: 1h
+          max_compaction_objects: 1000000
+          block_retention: 1h
+          compacted_block_retention: 10m
+      storage:
+        trace:
+          backend: local
+          local:
+            path: /tmp/tempo/blocks
+          wal:
+            path: /tmp/tempo/wal
+
+volumes:
+  prometheus_data:
+  tempo_data:
+  grafana_data:
+
+networks:
+  app:
+    external: true
+    name: docker_app
+  observability:
+    driver: bridge

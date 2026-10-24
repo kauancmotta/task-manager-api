@@ -28,6 +28,7 @@ Built with NestJS · TypeORM · PostgreSQL · JWT · Google OAuth2
 - 📄 **OpenAPI / Swagger** — Full interactive docs at `/api/docs` with typed response schemas
 - 🧪 **Tests** — Unit tests (55+ files) covering services, controllers and guards + E2E tests with Supertest against a real PostgreSQL instance
 - 🗑️ **Cascade Soft-Delete** — Deleting a user propagates through tasks, assignees and attachments
+- 📊 **Observability** — OpenTelemetry traces + metrics, Prometheus, Grafana dashboards and Tempo distributed tracing
 
 ---
 
@@ -47,6 +48,9 @@ Built with NestJS · TypeORM · PostgreSQL · JWT · Google OAuth2
 | Logging | nestjs-pino (structured) |
 | IDs | UUID v7 (time-sorted) |
 | Containerization | Docker + Docker Compose |
+| Traces | OpenTelemetry SDK + Tempo |
+| Metrics | OpenTelemetry SDK + Prometheus |
+| Dashboards | Grafana (provisioned) |
 
 ---
 
@@ -62,7 +66,9 @@ src/
 │   ├── interceptors/         # Logging interceptor
 │   ├── pipes/                # AppValidationPipe (structured errors)
 │   ├── presenters/           # Response serialization classes
+│   ├── storage/              # Abstract StorageService (Local / S3)
 │   ├── swagger/              # SwaggerXxxResponse helpers
+│   ├── telemetry/            # OpenTelemetry SDK bootstrap (traces + metrics)
 │   └── testing/              # Mock factories
 │       ├── mock-entities.ts
 │       ├── mock-logger.ts
@@ -74,7 +80,6 @@ src/
 │   ├── users/                # User CRUD + soft-delete cascade
 │   ├── tasks/                # Tasks with state machine + QueryBuilder
 │   ├── categories/           # Category CRUD + validation
-│   └── storage/              # Abstract StorageService (Local / S3)
 ├── database/
 │   ├── entities/             # BaseEntity (soft-delete), all entities
 │   └── migrations/
@@ -85,6 +90,14 @@ src/
 │       ├── password-reset.hbs
 │       └── password-changed.hbs
 └── main.ts                   # Bootstrap, global pipes, CORS, Swagger
+
+observability/                # Observability stack (separate compose)
+├── otel-collector-config.yaml
+├── prometheus.yml
+└── grafana/
+    └── provisioning/
+        ├── datasources/      # Prometheus + Tempo auto-provisioned
+        └── dashboards/       # Task Manager API dashboard
 
 test/
 ├── helpers/
@@ -242,6 +255,60 @@ This project uses `softRemove()` on a loaded entity, which follows the relation 
 
 ---
 
+## 📊 Observability
+
+The observability stack runs as a separate Docker Compose file and shares the application network. It provides distributed tracing, metrics collection and pre-built dashboards — all provisioned automatically on startup.
+
+### Architecture
+
+```
+API (OTel SDK)
+  │
+  ▼ OTLP/HTTP
+OTel Collector
+  ├──→ Tempo      (traces)
+  └──→ Prometheus (metrics, scraped from collector)
+         │
+         ▼
+       Grafana   (dashboards + trace exploration)
+```
+
+### Stack
+
+| Component | Role | Port |
+|---|---|---|
+| OpenTelemetry Collector | Receives OTLP, fans out to backends | 4317 (gRPC), 4318 (HTTP) |
+| Tempo | Distributed trace storage | internal |
+| Prometheus | Metrics storage | 9090 |
+| Grafana | Dashboards + Explore | 3000 |
+
+### Starting the observability stack
+
+The stack requires the application network to be created first (by starting the main compose):
+
+```bash
+# Start the main app first (creates the docker_app network)
+docker compose -f ./.docker/docker-compose.prod.yaml up -d
+
+# Then start observability
+docker compose -f ./.docker/docker-compose.observability.yaml up -d
+```
+
+Grafana is available at `http://localhost:3000` (default credentials: `admin` / `admin`).
+
+The **Task Manager API** dashboard is provisioned automatically and shows:
+
+- **Requests/sec** — real-time throughput
+- **P95 Latency** — 95th percentile response time
+- **4xx Rate** — client error rate
+- **5xx Rate** — server error rate
+- **Request Duration by Route** — p95 and p50 latency per endpoint
+- **Requests by Status Code** — traffic breakdown per HTTP status
+
+Distributed traces are available in **Explore → Tempo** and can be correlated with metrics directly from the dashboard.
+
+---
+
 ## 🧪 Running Tests
 
 ### Unit Tests
@@ -310,6 +377,9 @@ GOOGLE_OAUTH_ENABLED=false
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_CALLBACK_URL=
+
+# Observability (optional — set when running the observability stack)
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
 ```
 
 ---
@@ -325,6 +395,9 @@ docker compose -f ./.docker/docker-compose.dev.yaml up -d postgres
 
 # Start the test database (isolated instance for E2E)
 docker compose -f ./.docker/docker-compose.test.yaml up -d
+
+# Start the observability stack (OTel Collector + Prometheus + Grafana + Tempo)
+docker compose -f ./.docker/docker-compose.observability.yaml up -d
 ```
 
 ---
